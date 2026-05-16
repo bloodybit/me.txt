@@ -4,7 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>me.txt — Likeness Consent Registry</title>
-  <link rel="stylesheet" href="/style.css?v=hog-radar" />
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('metxt_theme');
+        var theme = stored
+          || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="/style.css?v=theme-2" />
 </head>
 <body>
 
@@ -15,6 +27,10 @@
     <button class="nav-link" data-screen-link="scan">Scan</button>
     <button class="nav-link" data-screen-link="image-search">Image Search</button>
     <button class="nav-link" data-screen-link="dashboard">Dashboard</button>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
+      <span class="theme-icon-dark" aria-hidden="true">&#9788;</span>
+      <span class="theme-icon-light" aria-hidden="true">&#9789;</span>
+    </button>
   </div>
 </nav>
 

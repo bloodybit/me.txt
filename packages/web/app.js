@@ -24,6 +24,17 @@
     el.addEventListener('click', () => showScreen(el.dataset.screenLink));
   });
 
+  // ---------- Theme toggle ----------
+  const THEME_KEY = 'metxt_theme';
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* ignore */ }
+    });
+  }
+
   // ---------- Photo slots ----------
   document.querySelectorAll('[data-photo-input]').forEach(input => {
     input.addEventListener('change', e => {
