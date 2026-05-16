@@ -13,6 +13,7 @@ const { initFace, getDescriptor } = require('./face');
 
 const DEMO_PROFILE_ID = 'me_demo01';
 const DEMO_NAME = 'Demo User';
+const DEMO_HANDLE = 'demo-user';
 const SAMPLE_FACE_CANDIDATES = [
   path.join(__dirname, '..', 'web', 'demo-face.svg'),
   path.join(__dirname, '..', 'web', 'demo-face.png'),
@@ -27,7 +28,7 @@ async function seed() {
     return;
   }
 
-  createProfile(DEMO_PROFILE_ID, DEMO_NAME);
+  createProfile(DEMO_PROFILE_ID, DEMO_NAME, DEMO_HANDLE);
 
   const samplePath = SAMPLE_FACE_CANDIDATES.find(p => fs.existsSync(p));
   const buffer = samplePath
@@ -47,7 +48,7 @@ async function seed() {
   updateConsent(DEMO_PROFILE_ID, 'satire', 'deny');
 
   console.log(`[seed] Created demo profile "${DEMO_PROFILE_ID}" (${DEMO_NAME}).`);
-  console.log(`[seed] Visit /.well-known/me.txt?id=${DEMO_PROFILE_ID} to see its me.txt.`);
+  console.log(`[seed] Visit /${DEMO_HANDLE}/me.txt to see its me.txt.`);
 }
 
 seed()
