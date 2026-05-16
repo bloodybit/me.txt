@@ -6,11 +6,12 @@
   "scripts": {
     "start": "node index.js",
     "seed": "node seed.js",
-    "test": "node --test test/",
+    "test": "node --test test/*.test.js",
     "download-models": "node scripts/download-models.js",
     "postinstall": "node scripts/download-models.js"
   },
   "dependencies": {
+    "@tensorflow/tfjs-node": "^4.22.0",
     "@vladmandic/face-api": "^1.7.13",
     "better-sqlite3": "^11.3.0",
     "canvas": "^2.11.2",
