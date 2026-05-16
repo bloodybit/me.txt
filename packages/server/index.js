@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const os = require('os');
 const crypto = require('crypto');
 const cors = require('cors');
 const multer = require('multer');
@@ -275,7 +276,7 @@ app.post('/api/image-search', async (req, res) => {
       input: imageDataUri,
       limit,
       score,
-      out: path.join('/private/tmp', 'metxt-image-search-lab', runId),
+      out: path.join(os.tmpdir(), 'metxt-image-search-lab', runId),
     });
 
     res.json({
