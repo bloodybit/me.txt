@@ -13,22 +13,6 @@
   --accent-green: #4caf50;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg-primary: #f4f6fb;
-    --bg-surface: #ffffff;
-    --bg-card: #ffffff;
-    --border-subtle: #d9deea;
-    --text-primary: #0c1126;
-    --text-secondary: #475067;
-    --text-muted: #8089a3;
-    --accent-blue: #1a6dff;
-    --accent-blue-on: #ffffff;
-    --accent-red: #d92038;
-    --accent-green: #2e8540;
-  }
-}
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {

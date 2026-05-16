@@ -8,9 +8,7 @@
     (function () {
       try {
         var stored = localStorage.getItem('metxt_theme');
-        var theme = stored
-          || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-theme', stored || 'dark');
       } catch (e) {
         document.documentElement.setAttribute('data-theme', 'dark');
       }
