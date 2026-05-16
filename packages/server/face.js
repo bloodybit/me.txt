@@ -68,8 +68,20 @@ async function getDescriptor(buffer) {
         console.warn('[face] Decoded image has zero dimensions, falling back to mock');
         return mockDescriptor(buffer);
       }
+      // Re-render through a fresh canvas with explicit dimensions. node-canvas
+      // on macOS can decode some JPEGs into an Image with width/height getters
+      // set but a zero-sized backing buffer, which crashes face-api's
+      // tf.fromPixels from a sync callback that escapes try/catch. A freshly
+      // allocated canvas guarantees fromPixels sees a buffer of known size.
+      const canvas = canvasLib.createCanvas(img.width, img.height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      if (!canvas.width || !canvas.height) {
+        console.warn('[face] Re-rendered canvas has zero dimensions, falling back to mock');
+        return mockDescriptor(buffer);
+      }
       const detection = await faceapi
-        .detectSingleFace(img)
+        .detectSingleFace(canvas)
         .withFaceLandmarks()
         .withFaceDescriptor();
       if (detection && detection.descriptor) {
