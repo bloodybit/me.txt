@@ -43,6 +43,28 @@ function sha256(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
+function scanRequestContext(req) {
+  return {
+    sourceUrl: req.body.source_url || req.query.source_url || null,
+    useType: req.body.use_type || req.query.use_type || null,
+  };
+}
+
+function logScanStart({ sourceUrl, useType }) {
+  console.log(
+    `[scan] request source=${sourceUrl || 'unknown'} use_type=${useType || 'unspecified'}`
+  );
+}
+
+function logScan({ sourceUrl, useType, imageHash, verdict, match }) {
+  const matched = match
+    ? `${match.profile_id} confidence=${match.confidence.toFixed(4)}`
+    : 'none';
+  console.log(
+    `[scan] verdict=${verdict} source=${sourceUrl || 'unknown'} use_type=${useType || 'unspecified'} image=sha256:${imageHash.slice(0, 12)} match=${matched}`
+  );
+}
+
 function baseUrl(req) {
   return `${req.protocol}://${req.get('host')}`;
 }
@@ -109,6 +131,9 @@ app.post('/api/register', upload.array('photos', 5), async (req, res) => {
 });
 
 app.post('/api/match', upload.single('image'), async (req, res) => {
+  const { sourceUrl, useType } = scanRequestContext(req);
+  logScanStart({ sourceUrl, useType });
+
   try {
     const buffer = await bufferFromBody(req);
     if (!buffer) {
@@ -121,11 +146,10 @@ app.post('/api/match', upload.single('image'), async (req, res) => {
     const stored = getAllEmbeddings();
     const match = matchDescriptor(descriptor, stored, MATCH_THRESHOLD);
 
-    const sourceUrl = req.body.source_url || req.query.source_url || null;
-    const useType = req.body.use_type || req.query.use_type || null;
     const imageHash = sha256(buffer);
 
     if (!match) {
+      logScan({ sourceUrl, useType, imageHash, verdict: 'NO_MATCH', match: null });
       return res.json({
         verdict: 'NO_MATCH',
         match: null,
@@ -143,6 +167,7 @@ app.post('/api/match', upload.single('image'), async (req, res) => {
     const applicable = matchedRule ? matchedRule.permission : null;
     const verdict = applicable === 'allow' ? 'ALLOWED' : 'AI_STOP';
 
+    logScan({ sourceUrl, useType, imageHash, verdict, match });
     logQuery(match.profile_id, sourceUrl, match.confidence, verdict);
 
     res.json({
@@ -168,7 +193,7 @@ app.post('/api/match', upload.single('image'), async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('[match]', err);
+    console.error(`[scan] error source=${sourceUrl || 'unknown'} use_type=${useType || 'unspecified'}:`, err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -222,4 +247,5 @@ app.use(express.static(path.join(__dirname, '..', 'web')));
 
 app.listen(PORT, () => {
   console.log(`me.txt server running on http://localhost:${PORT}`);
+  console.log('[scan] logging enabled for POST /api/match');
 });
