@@ -3,8 +3,11 @@ const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 
-const DATA_DIR = path.join(__dirname, '..', '..', 'data');
-const DB_PATH = path.join(DATA_DIR, 'metxt.db');
+const DEFAULT_DATA_DIR = path.join(__dirname, '..', '..', 'data');
+const DB_PATH = process.env.METXT_DB_PATH
+  ? path.resolve(process.env.METXT_DB_PATH)
+  : path.join(process.env.METXT_DATA_DIR ? path.resolve(process.env.METXT_DATA_DIR) : DEFAULT_DATA_DIR, 'metxt.db');
+const DATA_DIR = path.dirname(DB_PATH);
 
 let db;
 
@@ -85,6 +88,12 @@ function createProfile(id, name, handle) {
   return finalHandle;
 }
 
+function updateProfile(id, name, handle) {
+  const finalHandle = handle || generateUniqueHandle(name, { exclude: id });
+  db.prepare('UPDATE profiles SET name = ?, handle = ? WHERE id = ?').run(name, finalHandle, id);
+  return finalHandle;
+}
+
 function getProfileByHandle(handle) {
   return db.prepare('SELECT * FROM profiles WHERE handle = ?').get(handle);
 }
@@ -93,6 +102,10 @@ function addEmbedding(profileId, descriptor, photoHash) {
   const buf = Buffer.from(new Float32Array(descriptor).buffer);
   db.prepare('INSERT INTO embeddings (profile_id, embedding, photo_hash) VALUES (?, ?, ?)')
     .run(profileId, buf, photoHash);
+}
+
+function deleteEmbeddings(profileId) {
+  db.prepare('DELETE FROM embeddings WHERE profile_id = ?').run(profileId);
 }
 
 function getAllEmbeddings() {
@@ -143,7 +156,9 @@ function getAuditLog(profileId, limit = 50) {
 module.exports = {
   initDb,
   createProfile,
+  updateProfile,
   addEmbedding,
+  deleteEmbeddings,
   getAllEmbeddings,
   getProfile,
   getProfileByHandle,

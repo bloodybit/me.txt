@@ -1,9 +1,13 @@
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const {
   initDb,
   createProfile,
+  updateProfile,
   addEmbedding,
+  deleteEmbeddings,
   updateConsent,
   getProfile,
   deleteProfile,
@@ -15,22 +19,21 @@ const LEGACY_PROFILE_IDS = ['me_demo01'];
 const DEMO_PROFILE_ID = 'me_vin01';
 const DEMO_NAME = 'Vin Diesel';
 const DEMO_HANDLE = 'vin-diesel';
-const DEMO_PHOTO_URLS = [
-  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwj2m3QXkw69XTStiRWEZhwjZD3OwQenjmHtw2W5ntvi-tRGn1-9YMpdJXNt46Xa8COv_LPOXxEbTsxVfpNP5s8eeni1StZsG8KOoM6O4&s=10',
-  'https://upload.wikimedia.org/wikipedia/commons/8/83/Vin_Diesel_by_Gage_Skidmore_2.jpg?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original',
-  'https://ntvb.tmsimg.com/assets/assets/79719_v9_bc.jpg?w=360&h=480',
+const DEMO_PHOTO_PATHS = [
+  path.join(__dirname, 'fixtures', 'vin-diesel', 'seed-wikimedia.jpg'),
+  path.join(__dirname, 'fixtures', 'vin-diesel', 'seed-tms.jpg'),
 ];
 
-async function fetchImage(url) {
-  const resp = await fetch(url, {
-    headers: { 'User-Agent': 'metxt-seed/0.1' },
-    redirect: 'follow',
-  });
-  if (!resp.ok) {
-    throw new Error(`failed to fetch ${url}: HTTP ${resp.status}`);
+async function buildDemoEmbeddings() {
+  const embeddings = [];
+  for (const photoPath of DEMO_PHOTO_PATHS) {
+    console.log(`[seed] Reading ${photoPath}`);
+    const buffer = fs.readFileSync(photoPath);
+    const descriptor = await getDescriptor(buffer);
+    const photoHash = crypto.createHash('sha256').update(buffer).digest('hex');
+    embeddings.push({ descriptor, photoHash });
   }
-  const arr = await resp.arrayBuffer();
-  return Buffer.from(arr);
+  return embeddings;
 }
 
 async function seed() {
@@ -44,18 +47,19 @@ async function seed() {
     }
   }
 
-  if (getProfile(DEMO_PROFILE_ID)) {
-    console.log(`[seed] Demo profile "${DEMO_PROFILE_ID}" already exists. Skipping.`);
-    return;
+  const embeddings = await buildDemoEmbeddings();
+  const existing = getProfile(DEMO_PROFILE_ID);
+
+  if (existing) {
+    updateProfile(DEMO_PROFILE_ID, DEMO_NAME, DEMO_HANDLE);
+    deleteEmbeddings(DEMO_PROFILE_ID);
+    console.log(`[seed] Refreshed demo profile "${DEMO_PROFILE_ID}".`);
+  } else {
+    createProfile(DEMO_PROFILE_ID, DEMO_NAME, DEMO_HANDLE);
+    console.log(`[seed] Created demo profile "${DEMO_PROFILE_ID}".`);
   }
 
-  createProfile(DEMO_PROFILE_ID, DEMO_NAME, DEMO_HANDLE);
-
-  for (const url of DEMO_PHOTO_URLS) {
-    console.log(`[seed] Fetching ${url}`);
-    const buffer = await fetchImage(url);
-    const descriptor = await getDescriptor(buffer);
-    const photoHash = crypto.createHash('sha256').update(buffer).digest('hex');
+  for (const { descriptor, photoHash } of embeddings) {
     addEmbedding(DEMO_PROFILE_ID, descriptor, photoHash);
   }
 
@@ -64,7 +68,7 @@ async function seed() {
   updateConsent(DEMO_PROFILE_ID, 'ai_training', 'deny');
   updateConsent(DEMO_PROFILE_ID, 'satire', 'deny');
 
-  console.log(`[seed] Created demo profile "${DEMO_PROFILE_ID}" (${DEMO_NAME}).`);
+  console.log(`[seed] Demo profile "${DEMO_PROFILE_ID}" ready (${DEMO_NAME}, ${embeddings.length} embedding(s)).`);
   console.log(`[seed] Visit /${DEMO_HANDLE}/me.txt to see its me.txt.`);
 }
 

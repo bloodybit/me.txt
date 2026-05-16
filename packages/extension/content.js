@@ -5,19 +5,31 @@
   if (window.__metxtContentScriptLoaded) return;
   window.__metxtContentScriptLoaded = true;
 
+  const MIN_IMAGE_EDGE = 60;
+
   function collectImages(maxImages) {
-    const imgs = Array.from(document.images || []);
     const results = [];
-    for (const el of imgs) {
-      if (results.length >= maxImages) break;
-      if (!el.src || el.src.startsWith('data:')) continue;
-      const rect = el.getBoundingClientRect();
-      if (rect.width < 60 || rect.height < 60) continue;
+    const seen = new Set();
+
+    function addImage(src, rect, sourceType) {
+      if (results.length >= maxImages) return;
+      if (!src || seen.has(src)) return;
+      if (rect.width < MIN_IMAGE_EDGE || rect.height < MIN_IMAGE_EDGE) return;
+      seen.add(src);
       results.push({
-        src: el.src,
+        src,
         rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+        sourceType,
       });
     }
+
+    for (const el of Array.from(document.images || [])) {
+      if (results.length >= maxImages) break;
+      const src = el.currentSrc || el.src;
+      const rect = el.getBoundingClientRect();
+      addImage(src, rect, 'img');
+    }
+
     return results;
   }
 
@@ -46,7 +58,7 @@
     ensureStyles();
     clearOverlays();
     for (const m of matches) {
-      const el = Array.from(document.images || []).find(img => img.src === m.imageUrl);
+      const el = Array.from(document.images || []).find(img => (img.currentSrc || img.src) === m.imageUrl);
       if (!el) continue;
 
       const rect = el.getBoundingClientRect();
