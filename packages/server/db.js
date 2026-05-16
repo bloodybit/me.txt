@@ -1,4 +1,5 @@
 const Database = require('better-sqlite3');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 
@@ -16,6 +17,7 @@ function initDb() {
     CREATE TABLE IF NOT EXISTS profiles (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
+      handle TEXT UNIQUE,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS embeddings (
@@ -40,11 +42,51 @@ function initDb() {
     );
     CREATE INDEX IF NOT EXISTS idx_audit_profile ON audit_log(profile_id, queried_at DESC);
   `);
+  ensureHandleColumn();
   return db;
 }
 
-function createProfile(id, name) {
-  db.prepare('INSERT INTO profiles (id, name) VALUES (?, ?)').run(id, name);
+function ensureHandleColumn() {
+  const cols = db.prepare("PRAGMA table_info(profiles)").all();
+  if (!cols.some(c => c.name === 'handle')) {
+    db.exec('ALTER TABLE profiles ADD COLUMN handle TEXT');
+    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_handle ON profiles(handle)');
+  }
+}
+
+function slugify(name) {
+  const base = (name || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+  return base || 'user';
+}
+
+function generateUniqueHandle(name, { exclude } = {}) {
+  const base = slugify(name);
+  const taken = handle => {
+    const row = db.prepare('SELECT id FROM profiles WHERE handle = ?').get(handle);
+    return row && row.id !== exclude;
+  };
+  if (!taken(base)) return base;
+  for (let i = 0; i < 20; i++) {
+    const candidate = `${base}-${crypto.randomBytes(2).toString('hex')}`;
+    if (!taken(candidate)) return candidate;
+  }
+  throw new Error('could not generate unique handle');
+}
+
+function createProfile(id, name, handle) {
+  const finalHandle = handle || generateUniqueHandle(name);
+  db.prepare('INSERT INTO profiles (id, name, handle) VALUES (?, ?, ?)').run(id, name, finalHandle);
+  return finalHandle;
+}
+
+function getProfileByHandle(handle) {
+  return db.prepare('SELECT * FROM profiles WHERE handle = ?').get(handle);
 }
 
 function addEmbedding(profileId, descriptor, photoHash) {
@@ -64,6 +106,10 @@ function getAllEmbeddings() {
 
 function getProfile(id) {
   return db.prepare('SELECT * FROM profiles WHERE id = ?').get(id);
+}
+
+function deleteProfile(id) {
+  db.prepare('DELETE FROM profiles WHERE id = ?').run(id);
 }
 
 function listProfiles() {
@@ -100,9 +146,13 @@ module.exports = {
   addEmbedding,
   getAllEmbeddings,
   getProfile,
+  getProfileByHandle,
+  deleteProfile,
   listProfiles,
   updateConsent,
   getConsentRules,
   logQuery,
   getAuditLog,
+  slugify,
+  generateUniqueHandle,
 };

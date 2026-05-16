@@ -6,6 +6,7 @@
 
   let activeProfileId = localStorage.getItem(STORAGE_KEY) || null;
   let activeProfileName = null;
+  let activeProfileHandle = null;
   let scanCount = 0;
 
   // ---------- Navigation ----------
@@ -89,6 +90,7 @@
       const data = await resp.json();
       activeProfileId = data.profile_id;
       activeProfileName = data.profile.name;
+      activeProfileHandle = data.profile.handle || null;
       localStorage.setItem(STORAGE_KEY, activeProfileId);
 
       renderMetxtPreview('metxt-output', data.metxt);
@@ -234,6 +236,7 @@
       }
       const data = await profileResp.json();
       activeProfileName = data.profile.name;
+      activeProfileHandle = data.profile.handle || null;
       applyDashConsent(data.consent);
       renderDashMetxt(data.profile, data.consent);
 
@@ -268,7 +271,10 @@
         });
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const data = await resp.json();
-        renderDashMetxt({ id: activeProfileId, name: activeProfileName }, data.consent);
+        renderDashMetxt(
+          { id: activeProfileId, name: activeProfileName, handle: activeProfileHandle },
+          data.consent
+        );
       } catch (err) {
         console.warn('[consent] update failed', err);
         t.classList.toggle('on');
@@ -276,7 +282,13 @@
     });
   });
 
+  function setDashMetxtPath(handle) {
+    const el = document.getElementById('dash-metxt-path');
+    if (el) el.textContent = handle ? '/' + handle + '/me.txt' : '/me.txt';
+  }
+
   function renderDashMetxtEmpty() {
+    setDashMetxtPath(null);
     const el = document.getElementById('dash-metxt');
     el.innerHTML = colorizeMetxt(
       '# me.txt v0.1\n' +
@@ -292,6 +304,7 @@
   }
 
   function renderDashMetxt(profile, rules) {
+    setDashMetxtPath(profile.handle);
     const ruleMap = {};
     rules.forEach(r => { ruleMap[r.use_type] = r.permission; });
     const lines = [
@@ -315,6 +328,9 @@
     lines.push('');
     lines.push('Match-Endpoint: ' + location.origin + '/api/match');
     lines.push('Profile: ' + location.origin + '/api/profile/' + profile.id);
+    if (profile.handle) {
+      lines.push('Self: ' + location.origin + '/' + profile.handle + '/me.txt');
+    }
     lines.push('');
     lines.push('# Updated: ' + new Date().toISOString());
     document.getElementById('dash-metxt').innerHTML = colorizeMetxt(lines.join('\n'));

@@ -10,6 +10,7 @@ const {
   addEmbedding,
   getAllEmbeddings,
   getProfile,
+  getProfileByHandle,
   listProfiles,
   updateConsent,
   getConsentRules,
@@ -164,7 +165,7 @@ app.post('/api/match', upload.single('image'), async (req, res) => {
       takedown: {
         notice: 'This content contains a registered likeness used without consent. The subject has opted out of AI-generated reproductions via the me.txt protocol.',
         profile_url: `${baseUrl(req)}/api/profile/${match.profile_id}`,
-        metxt_url: `${baseUrl(req)}/.well-known/me.txt?id=${match.profile_id}`,
+        metxt_url: `${baseUrl(req)}/${profile.handle}/me.txt`,
       },
     });
   } catch (err) {
@@ -201,19 +202,14 @@ app.get('/api/audit-log', (req, res) => {
   res.json(getAuditLog(profileId, parseInt(req.query.limit, 10) || 50));
 });
 
-app.get('/.well-known/me.txt', (req, res) => {
+const RESERVED_HANDLES = new Set(['api', 'app.js', 'style.css', 'index.html', 'demo-face.svg', 'test-page.html', 'favicon.ico', '.well-known']);
+
+app.get('/:handle/me.txt', (req, res) => {
   res.set('Content-Type', 'text/plain; charset=utf-8');
-  const id = req.query.id;
-  const profile = id ? getProfile(id) : null;
-  if (!profile) {
-    const all = listProfiles();
-    if (all.length === 0) {
-      return res.send('# me.txt v0.1\n# Human Likeness Consent Registry\n# No profiles registered yet.\n');
-    }
-    const first = all[0];
-    const rules = getConsentRules(first.id);
-    return res.send(generateMeTxt(first, rules, { baseUrl: baseUrl(req) }));
-  }
+  const handle = req.params.handle;
+  if (RESERVED_HANDLES.has(handle)) return res.status(404).send('# me.txt: not found\n');
+  const profile = getProfileByHandle(handle);
+  if (!profile) return res.status(404).send('# me.txt: not found\n');
   const rules = getConsentRules(profile.id);
   res.send(generateMeTxt(profile, rules, { baseUrl: baseUrl(req) }));
 });

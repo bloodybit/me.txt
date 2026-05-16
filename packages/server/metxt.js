@@ -25,6 +25,9 @@ function generateMeTxt(profile, rules, opts = {}) {
   lines.push('');
   lines.push(`Match-Endpoint: ${baseUrl}/api/match`);
   lines.push(`Profile: ${baseUrl}/api/profile/${profile.id}`);
+  if (profile.handle) {
+    lines.push(`Self: ${baseUrl}/${profile.handle}/me.txt`);
+  }
   lines.push('');
   lines.push(`Updated: ${new Date().toISOString()}`);
   return lines.join('\n') + '\n';
