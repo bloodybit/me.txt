@@ -121,6 +121,18 @@ header { text-align: center; margin-bottom: 4px; }
   color: #ffc107;
 }
 .result-row .meta { color: var(--text-muted); font-size: 10px; word-break: break-all; }
+.packet-link {
+  margin-top: 2px;
+  border: 1px solid rgba(100, 181, 246, 0.35);
+  background: transparent;
+  color: var(--accent-blue);
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.packet-link:hover { background: rgba(100, 181, 246, 0.1); }
 
 footer {
   display: flex;

@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const cors = require('cors');
 const multer = require('multer');
 
+require('./env').loadEnv();
+
 const {
   initDb,
   createProfile,
@@ -16,9 +18,15 @@ const {
   getConsentRules,
   logQuery,
   getAuditLog,
+  saveEvidencePacket,
+  getEvidencePacket,
+  getEvidencePackets,
 } = require('./db');
 const { initFace, getDescriptor, getDescriptors, matchDescriptors } = require('./face');
 const { generateMeTxt, USE_TYPES } = require('./metxt');
+const { buildEvidencePacket } = require('./evidence');
+const hog = require('./hog');
+const { searchImage } = require('../image-search-lab');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -68,6 +76,29 @@ function logScan({ sourceUrl, useType, imageHash, verdict, match }) {
 
 function baseUrl(req) {
   return `${req.protocol}://${req.get('host')}`;
+}
+
+async function createEvidenceForMatch(req, {
+  profile,
+  match,
+  sourceUrl,
+  useType,
+  imageHash,
+  verdict,
+  applicableRule,
+}) {
+  const evidence = await buildEvidencePacket({
+    baseUrl: baseUrl(req),
+    profile,
+    match,
+    sourceUrl,
+    useType,
+    imageHash,
+    verdict,
+    applicableRule,
+  });
+  saveEvidencePacket(evidence);
+  return evidence;
 }
 
 async function bufferFromBody(req) {
@@ -169,8 +200,21 @@ app.post('/api/match', upload.single('image'), async (req, res) => {
     const applicable = matchedRule ? matchedRule.permission : null;
     const verdict = applicable === 'allow' ? 'ALLOWED' : 'AI_STOP';
 
+    let evidence = null;
+    if (verdict === 'AI_STOP') {
+      evidence = await createEvidenceForMatch(req, {
+        profile,
+        match,
+        sourceUrl,
+        useType,
+        imageHash,
+        verdict,
+        applicableRule: applicable,
+      });
+    }
+
     logScan({ sourceUrl, useType, imageHash, verdict, match });
-    logQuery(match.profile_id, sourceUrl, match.confidence, verdict);
+    logQuery(match.profile_id, sourceUrl, match.confidence, verdict, evidence ? evidence.id : null);
 
     res.json({
       verdict,
@@ -193,13 +237,83 @@ app.post('/api/match', upload.single('image'), async (req, res) => {
       takedown: {
         notice: 'This content contains a registered likeness used without consent. The subject has opted out of AI-generated reproductions via the me.txt protocol.',
         profile_url: `${baseUrl(req)}/api/profile/${match.profile_id}`,
+        evidence_url: evidence ? `${baseUrl(req)}/api/evidence/${evidence.id}` : null,
         metxt_url: `${baseUrl(req)}/${profile.handle}/me.txt`,
       },
+      evidence,
     });
   } catch (err) {
     console.error(`[scan] error source=${sourceUrl || 'unknown'} use_type=${useType || 'unspecified'}:`, err);
     res.status(500).json({ error: err.message });
   }
+});
+
+app.get('/api/hog/status', (req, res) => {
+  res.json(hog.status());
+});
+
+app.post('/api/image-search', async (req, res) => {
+  try {
+    const query = String((req.body && req.body.query) || '').trim();
+    const provider = String((req.body && req.body.provider) || 'ddg').trim();
+    const imageDataUri = String(
+      (req.body && (req.body.image_data_uri || req.body.imageDataUri || req.body.input)) || ''
+    ).trim();
+    const limit = Math.min(Math.max(parseInt(req.body && req.body.limit, 10) || 8, 1), 20);
+    const score = !(req.body && req.body.score === false);
+
+    if (!query) return res.status(400).json({ error: 'query is required' });
+    if (!imageDataUri) return res.status(400).json({ error: 'image_data_uri is required' });
+    if (!['ddg', 'brave'].includes(provider)) {
+      return res.status(400).json({ error: 'provider must be ddg or brave' });
+    }
+
+    const runId = crypto.randomBytes(6).toString('hex');
+    const result = await searchImage({
+      query,
+      provider,
+      input: imageDataUri,
+      limit,
+      score,
+      out: path.join('/private/tmp', 'metxt-image-search-lab', runId),
+    });
+
+    res.json({
+      query: result.query,
+      provider: result.provider,
+      scoring: {
+        enabled: result.scoring.enabled,
+        method: result.scoring.method,
+        error: result.scoring.error || null,
+      },
+      results: result.results.map(item => ({
+        rank: item.rank,
+        title: item.title,
+        pageUrl: item.pageUrl,
+        imageUrl: item.imageUrl,
+        thumbnailUrl: item.thumbnailUrl,
+        width: item.width,
+        height: item.height,
+        source: item.source,
+        similarity: item.similarity,
+        error: item.error,
+      })),
+    });
+  } catch (err) {
+    console.error('[image-search]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/evidence', (req, res) => {
+  const profileId = req.query.profile_id || null;
+  res.json(getEvidencePackets(profileId, parseInt(req.query.limit, 10) || 20));
+});
+
+app.get('/api/evidence/:id', (req, res) => {
+  const evidence = getEvidencePacket(req.params.id);
+  if (!evidence) return res.status(404).json({ error: 'evidence not found' });
+  res.json(evidence);
 });
 
 app.get('/api/profile/:id', (req, res) => {

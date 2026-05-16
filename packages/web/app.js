@@ -132,10 +132,11 @@
   }
 
   function esc(s) {
-    return s
+    return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   // ---------- Scan (simulated) ----------
@@ -188,7 +189,7 @@
     badge.style.top = (tRect.top - vRect.top - 32) + 'px';
   }
 
-  function finishScan() {
+  async function finishScan() {
     document.getElementById('info-bar').style.display = 'block';
     scanBtn.disabled = false;
     scanBtn.innerHTML = '&#9654; Scan Again';
@@ -203,9 +204,9 @@
     const now = new Date();
     const time = now.toISOString().slice(11, 19) + 'Z';
     const sources = [
-      'ai-generated-content.example.com',
-      'deepfake-gallery.net',
       'synthetic-portraits.io',
+      'deepfake-gallery.net',
+      'ai-generated-content.example.com',
     ];
     const entry = document.createElement('div');
     entry.className = 'audit-entry';
@@ -218,10 +219,15 @@
 
   // ---------- Dashboard ----------
   async function refreshDashboard() {
+    refreshHogStatus();
     if (!activeProfileId) {
-      renderDashMetxtEmpty();
-      renderAuditEmpty();
-      return;
+      const selected = await selectDefaultProfile();
+      if (!selected) {
+        renderDashMetxtEmpty();
+        renderAuditEmpty();
+        renderEvidencePackets([]);
+        return;
+      }
     }
     try {
       const profileResp = await fetch('/api/profile/' + encodeURIComponent(activeProfileId));
@@ -240,11 +246,52 @@
       applyDashConsent(data.consent);
       renderDashMetxt(data.profile, data.consent);
 
-      const auditResp = await fetch('/api/audit-log?profile_id=' + encodeURIComponent(activeProfileId));
+      const auditResp = await fetch('/api/audit-log?profile_id=' + encodeURIComponent(activeProfileId) + '&limit=8');
       if (auditResp.ok) renderAuditLog(await auditResp.json());
+
+      const evidenceResp = await fetch('/api/evidence?profile_id=' + encodeURIComponent(activeProfileId));
+      if (evidenceResp.ok) renderEvidencePackets(await evidenceResp.json());
     } catch (err) {
       console.warn('[dashboard] refresh failed', err);
     }
+  }
+
+  async function selectDefaultProfile() {
+    try {
+      const resp = await fetch('/api/profiles');
+      if (!resp.ok) return false;
+      const profiles = await resp.json();
+      if (!profiles || profiles.length === 0) return false;
+      const profile = profiles[0];
+      activeProfileId = profile.id;
+      activeProfileName = profile.name;
+      activeProfileHandle = profile.handle || null;
+      localStorage.setItem(STORAGE_KEY, activeProfileId);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function refreshHogStatus() {
+    try {
+      const resp = await fetch('/api/hog/status');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      renderHogStatus(await resp.json());
+    } catch (err) {
+      const el = document.getElementById('hog-status');
+      if (el) el.textContent = 'Unable to read Hog API configuration.';
+    }
+  }
+
+  function renderHogStatus(status) {
+    const el = document.getElementById('hog-status');
+    if (!el) return;
+    const configured = status && status.configured;
+    el.className = 'hog-status ' + (configured ? 'configured' : 'missing');
+    el.innerHTML = configured
+      ? '<span>Live The Hog enrichment enabled</span><small>' + esc(status.base_url || '') + '</small>'
+      : '<span>The Hog credentials missing</span><small>Set HOG_ACCESS_KEY and HOG_SECRET_KEY. No source enrichment or contact lookup will be fabricated.</small>';
   }
 
   function applyDashConsent(rules) {
@@ -327,6 +374,7 @@
     });
     lines.push('');
     lines.push('Match-Endpoint: ' + location.origin + '/api/match');
+    lines.push('Evidence-Endpoint: ' + location.origin + '/api/evidence');
     lines.push('Profile: ' + location.origin + '/api/profile/' + profile.id);
     if (profile.handle) {
       lines.push('Self: ' + location.origin + '/' + profile.handle + '/me.txt');
@@ -354,17 +402,253 @@
       const cls = blocked ? 'blocked' : 'allowed';
       const label = blocked ? 'BLOCKED' : (e.result || 'OK');
       const source = e.source_url || '(no source)';
+      const sourceLabel = formatSource(source);
+      const evidence = e.evidence_id
+        ? ' · <button class="audit-link" data-evidence-id="' + esc(e.evidence_id) + '">packet</button>'
+        : '';
       const entry = document.createElement('div');
       entry.className = 'audit-entry';
       entry.innerHTML =
         '<span class="audit-time">' + esc(time) + '</span>' +
-        '<span class="audit-source">' + esc(source) + '</span>' +
-        '<span class="audit-result ' + cls + '">' + esc(label) + '</span>';
+        '<span class="audit-source" title="' + esc(source) + '">' + esc(sourceLabel) + '</span>' +
+        '<span class="audit-result ' + cls + '">' + esc(label) + '</span>' +
+        evidence;
       log.appendChild(entry);
+    });
+    log.querySelectorAll('[data-evidence-id]').forEach(btn => {
+      btn.addEventListener('click', () => scrollToEvidence(btn.dataset.evidenceId));
+    });
+  }
+
+  function renderEvidencePackets(entries) {
+    const list = document.getElementById('evidence-list');
+    if (!list) return;
+    if (!entries || entries.length === 0) {
+      list.innerHTML = '<div class="audit-empty">No evidence packets yet. Run a blocked scan to generate one.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    entries.forEach(packet => {
+      const source = packet.source || {};
+      const intel = packet.source_intelligence || {};
+      const risk = packet.risk || {};
+      const contacts = intel.contacts || {};
+      const firstEmail = contacts.emails && contacts.emails.length ? contacts.emails[0] : 'No contact found';
+      const company = intel.company && intel.company.name
+        ? intel.company.name
+        : (source.domain || 'Unknown source');
+      const status = intel.provider_status === 'enriched' ? 'Hog enriched' : 'Not enriched';
+      const card = document.createElement('div');
+      card.className = 'evidence-card';
+      card.dataset.evidenceId = packet.id;
+      card.innerHTML =
+        '<div class="evidence-top">' +
+          '<div>' +
+            '<div class="evidence-title">' + esc(company) + '</div>' +
+            '<div class="evidence-meta">' + esc(formatDate(packet.created_at)) + ' · ' + esc(source.domain || '') + '</div>' +
+          '</div>' +
+          '<span class="risk-badge ' + esc(risk.level || 'low') + '">' + esc((risk.level || 'low').toUpperCase()) + ' ' + esc(risk.score || 0) + '</span>' +
+        '</div>' +
+        '<div class="evidence-summary">' + esc(intel.summary || 'No summary available.') + '</div>' +
+        '<div class="evidence-grid">' +
+          '<div><span>Provider</span><strong>' + esc(status) + '</strong></div>' +
+          '<div><span>Use</span><strong>' + esc(packet.consent && packet.consent.use_type || 'unspecified') + '</strong></div>' +
+          '<div><span>Contact</span><strong>' + esc(firstEmail) + '</strong></div>' +
+        '</div>' +
+        '<pre class="notice-preview">' + esc(packet.takedown_notice || 'No takedown notice available until The Hog returns a verified contact.') + '</pre>';
+      list.appendChild(card);
+    });
+  }
+
+  function scrollToEvidence(id, smooth = true) {
+    if (!id) return;
+    const card = Array.from(document.querySelectorAll('[data-evidence-id]'))
+      .find(el => el.dataset.evidenceId === id);
+    if (!card) return;
+    card.classList.add('highlight');
+    card.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center' });
+    setTimeout(() => card.classList.remove('highlight'), 1400);
+  }
+
+  function formatDate(value) {
+    if (!value) return 'unknown time';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function formatSource(value) {
+    if (!value) return '(no source)';
+    try {
+      const url = new URL(value);
+      const path = url.pathname.length > 38 ? url.pathname.slice(0, 35) + '...' : url.pathname;
+      return url.hostname.replace(/^www\./, '') + path;
+    } catch {
+      return value.length > 72 ? value.slice(0, 69) + '...' : value;
+    }
+  }
+
+  // ---------- Image Search Lab ----------
+  const imageSearchFile = document.getElementById('image-search-file');
+  const imageSearchDataUri = document.getElementById('image-search-data-uri');
+  const imageSearchSubmit = document.getElementById('image-search-submit');
+  const imageSearchScore = document.getElementById('image-search-score');
+
+  if (imageSearchFile) {
+    imageSearchFile.addEventListener('change', () => {
+      const file = imageSearchFile.files && imageSearchFile.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        imageSearchDataUri.value = String(reader.result || '');
+        updateImageSearchPreview(imageSearchDataUri.value);
+        setImageSearchError('');
+      };
+      reader.onerror = () => setImageSearchError('Could not read the selected image.');
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (imageSearchDataUri) {
+    imageSearchDataUri.addEventListener('input', () => updateImageSearchPreview(imageSearchDataUri.value));
+  }
+
+  if (imageSearchSubmit) {
+    imageSearchSubmit.addEventListener('click', runImageSearch);
+  }
+
+  function updateImageSearchPreview(value) {
+    const dataUri = String(value || '').trim();
+    const img = document.getElementById('image-search-preview-img');
+    const empty = document.getElementById('image-search-preview-empty');
+    if (!img || !empty) return;
+
+    if (!dataUri.startsWith('data:image/')) {
+      img.removeAttribute('src');
+      img.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+
+    img.src = dataUri;
+    img.style.display = 'block';
+    empty.style.display = 'none';
+  }
+
+  function setImageSearchError(message) {
+    const el = document.getElementById('image-search-error');
+    if (!el) return;
+    if (!message) {
+      el.style.display = 'none';
+      el.textContent = '';
+      return;
+    }
+    el.textContent = message;
+    el.style.display = 'block';
+  }
+
+  function setImageSearchStatus(message) {
+    const el = document.getElementById('image-search-status');
+    if (el) el.textContent = message;
+  }
+
+  async function runImageSearch() {
+    const query = document.getElementById('image-search-query').value.trim();
+    const imageDataUri = imageSearchDataUri.value.trim();
+    const resultsEl = document.getElementById('image-search-results');
+
+    setImageSearchError('');
+    if (resultsEl) resultsEl.innerHTML = '';
+    if (!query) {
+      setImageSearchError('Search query is required.');
+      return;
+    }
+    if (!imageDataUri.startsWith('data:image/')) {
+      setImageSearchError('Upload an image or paste a data:image URI.');
+      return;
+    }
+
+    imageSearchSubmit.disabled = true;
+    imageSearchSubmit.textContent = 'Searching...';
+    setImageSearchStatus('Searching public image results...');
+
+    try {
+      const resp = await fetch('/api/image-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query,
+          image_data_uri: imageDataUri,
+          provider: 'ddg',
+          limit: 12,
+          score: imageSearchScore ? imageSearchScore.checked : true,
+        }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || 'Image search failed');
+      renderImageSearchResults(data);
+    } catch (err) {
+      setImageSearchStatus('Search failed.');
+      setImageSearchError(err.message || 'Image search failed.');
+    } finally {
+      imageSearchSubmit.disabled = false;
+      imageSearchSubmit.textContent = 'Search Images';
+    }
+  }
+
+  function renderImageSearchResults(data) {
+    const resultsEl = document.getElementById('image-search-results');
+    if (!resultsEl) return;
+    const results = data && data.results ? data.results : [];
+    const scored = results.filter(result => result.similarity != null).length;
+    setImageSearchStatus(
+      'Found ' + results.length + ' candidate image(s)' +
+      (scored ? '; scored ' + scored + ' for rough visual similarity.' : '.')
+    );
+
+    if (!results.length) {
+      resultsEl.innerHTML = '<div class="audit-empty">No candidate images found.</div>';
+      return;
+    }
+
+    resultsEl.innerHTML = '';
+    results.forEach((result, index) => {
+      const thumb = result.thumbnailUrl || result.imageUrl || '';
+      const similarity = result.similarity == null
+        ? 'not scored'
+        : Math.round(result.similarity * 100) + '% similar';
+      const pageUrl = result.pageUrl || result.imageUrl || '#';
+      const item = document.createElement('div');
+      item.className = 'image-result';
+      item.innerHTML =
+        '<div class="image-result-thumb">' +
+          (thumb ? '<img src="' + esc(thumb) + '" alt="" loading="lazy" />' : '<span>No image</span>') +
+        '</div>' +
+        '<div class="image-result-body">' +
+          '<div class="image-result-top">' +
+            '<span class="image-result-rank">#' + esc(index + 1) + '</span>' +
+            '<span class="image-result-score">' + esc(similarity) + '</span>' +
+          '</div>' +
+          '<div class="image-result-title">' + esc(result.title || 'Untitled image result') + '</div>' +
+          '<div class="image-result-url">' + esc(formatSource(pageUrl)) + '</div>' +
+          (result.error ? '<div class="image-result-error">' + esc(result.error) + '</div>' : '') +
+          '<div class="image-result-actions">' +
+            '<a href="' + esc(pageUrl) + '" target="_blank" rel="noopener">Open page</a>' +
+            (result.imageUrl ? '<a href="' + esc(result.imageUrl) + '" target="_blank" rel="noopener">Open image</a>' : '') +
+          '</div>' +
+        '</div>';
+      resultsEl.appendChild(item);
     });
   }
 
   // ---------- Init ----------
-  if (activeProfileId) refreshDashboard();
-  else renderDashMetxtEmpty();
+  const initialScreen = location.hash ? location.hash.replace(/^#/, '') : null;
+  if (initialScreen && document.getElementById('screen-' + initialScreen)) {
+    showScreen(initialScreen);
+  } else if (activeProfileId) {
+    refreshDashboard();
+  } else {
+    renderDashMetxtEmpty();
+    refreshHogStatus();
+  }
 })();

@@ -41,11 +41,23 @@ function initDb() {
       queried_at TEXT NOT NULL DEFAULT (datetime('now')),
       source_url TEXT,
       match_confidence REAL,
-      result TEXT
+      result TEXT,
+      evidence_id TEXT
+    );
+    CREATE TABLE IF NOT EXISTS evidence_packets (
+      id TEXT PRIMARY KEY,
+      profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      source_url TEXT,
+      verdict TEXT,
+      packet_json TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_audit_profile ON audit_log(profile_id, queried_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_evidence_profile ON evidence_packets(profile_id, created_at DESC);
   `);
   ensureHandleColumn();
+  ensureAuditEvidenceColumn();
+  purgeDemoEvidencePackets();
   return db;
 }
 
@@ -55,6 +67,24 @@ function ensureHandleColumn() {
     db.exec('ALTER TABLE profiles ADD COLUMN handle TEXT');
     db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_handle ON profiles(handle)');
   }
+}
+
+function ensureAuditEvidenceColumn() {
+  const cols = db.prepare("PRAGMA table_info(audit_log)").all();
+  if (!cols.some(c => c.name === 'evidence_id')) {
+    db.exec('ALTER TABLE audit_log ADD COLUMN evidence_id TEXT');
+  }
+}
+
+function purgeDemoEvidencePackets() {
+  const rows = db.prepare("SELECT id FROM evidence_packets WHERE packet_json LIKE ?")
+    .all('%"demo":true%');
+  if (!rows.length) return;
+
+  const ids = rows.map(row => row.id);
+  const placeholders = ids.map(() => '?').join(',');
+  db.prepare(`DELETE FROM audit_log WHERE evidence_id IN (${placeholders})`).run(...ids);
+  db.prepare(`DELETE FROM evidence_packets WHERE id IN (${placeholders})`).run(...ids);
 }
 
 function slugify(name) {
@@ -140,9 +170,10 @@ function getConsentRules(profileId) {
   return db.prepare('SELECT use_type, permission FROM consent_rules WHERE profile_id = ?').all(profileId);
 }
 
-function logQuery(profileId, sourceUrl, confidence, result) {
-  db.prepare('INSERT INTO audit_log (profile_id, source_url, match_confidence, result) VALUES (?, ?, ?, ?)')
-    .run(profileId, sourceUrl, confidence, result);
+function logQuery(profileId, sourceUrl, confidence, result, evidenceId = null) {
+  const info = db.prepare('INSERT INTO audit_log (profile_id, source_url, match_confidence, result, evidence_id) VALUES (?, ?, ?, ?, ?)')
+    .run(profileId, sourceUrl, confidence, result, evidenceId);
+  return info.lastInsertRowid;
 }
 
 function getAuditLog(profileId, limit = 50) {
@@ -151,6 +182,41 @@ function getAuditLog(profileId, limit = 50) {
       .all(profileId, limit);
   }
   return db.prepare('SELECT * FROM audit_log ORDER BY queried_at DESC LIMIT ?').all(limit);
+}
+
+function saveEvidencePacket(packet) {
+  db.prepare(`
+    INSERT OR REPLACE INTO evidence_packets (id, profile_id, created_at, source_url, verdict, packet_json)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(
+    packet.id,
+    packet.subject.profile_id,
+    packet.created_at,
+    packet.source.url,
+    packet.verdict,
+    JSON.stringify(packet)
+  );
+  return packet.id;
+}
+
+function getEvidencePacket(id) {
+  const row = db.prepare('SELECT * FROM evidence_packets WHERE id = ?').get(id);
+  return row ? parseEvidenceRow(row) : null;
+}
+
+function getEvidencePackets(profileId, limit = 20) {
+  const rows = profileId
+    ? db.prepare('SELECT * FROM evidence_packets WHERE profile_id = ? ORDER BY created_at DESC LIMIT ?').all(profileId, limit)
+    : db.prepare('SELECT * FROM evidence_packets ORDER BY created_at DESC LIMIT ?').all(limit);
+  return rows.map(parseEvidenceRow).filter(Boolean);
+}
+
+function parseEvidenceRow(row) {
+  try {
+    return JSON.parse(row.packet_json);
+  } catch {
+    return null;
+  }
 }
 
 module.exports = {
@@ -168,6 +234,9 @@ module.exports = {
   getConsentRules,
   logQuery,
   getAuditLog,
+  saveEvidencePacket,
+  getEvidencePacket,
+  getEvidencePackets,
   slugify,
   generateUniqueHandle,
 };

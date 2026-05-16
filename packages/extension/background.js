@@ -41,7 +41,7 @@ async function handleScanTab(tabId, apiUrl) {
     }
   }
 
-  const matches = results.filter(r => r.match);
+  const matches = results.filter(r => r.match && r.verdict === 'AI_STOP');
   if (matches.length > 0) {
     await chrome.tabs.sendMessage(tabId, {
       type: 'METXT_INJECT_OVERLAYS',
@@ -65,7 +65,7 @@ async function matchImage(apiUrl, imageUrl, pageUrl) {
   const resp = await fetch(apiUrl.replace(/\/$/, '') + '/api/match', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image_base64: imageBase64, source_url: pageUrl }),
+    body: JSON.stringify({ image_base64: imageBase64, source_url: pageUrl, use_type: 'commercial' }),
   });
   if (!resp.ok) throw new Error('API ' + resp.status);
   return resp.json();

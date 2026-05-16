@@ -42,7 +42,7 @@
       '.metxt-overlay-root{position:absolute;z-index:2147483647;pointer-events:none;font-family:-apple-system,system-ui,sans-serif;}' +
       '.metxt-box{position:absolute;inset:0;border:3px solid #ff1744;border-radius:6px;box-shadow:0 0 16px rgba(255,23,68,0.6);pointer-events:none;}' +
       '.metxt-badge{position:absolute;top:-14px;right:-8px;background:#ff1744;color:white;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:1.5px;box-shadow:0 4px 20px rgba(255,23,68,0.5);pointer-events:auto;}' +
-      '.metxt-info{position:absolute;left:0;right:0;bottom:-78px;background:rgba(0,0,0,0.9);color:white;border:1px solid rgba(255,23,68,0.4);border-radius:8px;padding:10px 14px;font-size:11px;line-height:1.6;backdrop-filter:blur(8px);pointer-events:auto;}' +
+      '.metxt-info{position:absolute;left:0;right:0;bottom:-98px;background:rgba(0,0,0,0.9);color:white;border:1px solid rgba(255,23,68,0.4);border-radius:8px;padding:10px 14px;font-size:11px;line-height:1.6;backdrop-filter:blur(8px);pointer-events:auto;}' +
       '.metxt-info .ttl{color:#ff1744;font-weight:700;letter-spacing:0.5px;display:block;margin-bottom:4px;}' +
       '.metxt-info .val{color:white;}' +
       '.metxt-info .conf{color:#ff6b6b;}' +
@@ -81,20 +81,31 @@
       const conf = m.match && m.match.confidence != null
         ? (m.match.confidence * 100).toFixed(1) + '%'
         : 'n/a';
-      const profileUrl = (m.takedown && m.takedown.profile_url) || '#';
+      const evidence = m.evidence || {};
+      const sourceIntel = evidence.source_intelligence || {};
+      const source = evidence.source || {};
+      const risk = evidence.risk || {};
+      const evidenceUrl = (m.takedown && m.takedown.evidence_url) ||
+        (m.takedown && m.takedown.profile_url) ||
+        '#';
       const name = (m.match && m.match.name) || 'Unknown';
       const profileId = (m.match && m.match.profile_id) || '—';
+      const sourceLabel = source.domain || sourceIntel.category || 'unknown source';
+      const riskLabel = risk.level ? risk.level.toUpperCase() + ' ' + (risk.score || '') : 'MEDIUM';
 
       const info = document.createElement('div');
       info.className = 'metxt-info';
       info.innerHTML =
         '<span class="ttl">REGISTERED LIKENESS — NO CONSENT</span>' +
         'Match: <span class="val"></span> · Confidence: <span class="conf"></span><br/>' +
-        'Profile: <span class="val pid"></span> · <a target="_blank" rel="noopener">View evidence packet →</a>';
+        'Profile: <span class="val pid"></span> · Source: <span class="val source"></span><br/>' +
+        'Risk: <span class="conf risk"></span> · <a target="_blank" rel="noopener">View evidence packet →</a>';
       info.querySelector('.val').textContent = name;
       info.querySelector('.conf').textContent = conf;
       info.querySelector('.pid').textContent = profileId;
-      info.querySelector('a').href = profileUrl;
+      info.querySelector('.source').textContent = sourceLabel;
+      info.querySelector('.risk').textContent = riskLabel;
+      info.querySelector('a').href = evidenceUrl;
       wrapper.appendChild(info);
 
       document.documentElement.appendChild(wrapper);

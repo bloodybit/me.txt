@@ -24,6 +24,7 @@ function generateMeTxt(profile, rules, opts = {}) {
   }
   lines.push('');
   lines.push(`Match-Endpoint: ${baseUrl}/api/match`);
+  lines.push(`Evidence-Endpoint: ${baseUrl}/api/evidence`);
   lines.push(`Profile: ${baseUrl}/api/profile/${profile.id}`);
   if (profile.handle) {
     lines.push(`Self: ${baseUrl}/${profile.handle}/me.txt`);

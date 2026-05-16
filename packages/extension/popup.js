@@ -81,23 +81,35 @@ function renderResults(results) {
       ? (r.match.confidence * 100).toFixed(1) + '%'
       : 'n/a';
     const faces = r.faces_detected != null ? ' &middot; Faces: ' + escapeHtml(r.faces_detected) : '';
-    const source = r.sourceType ? ' &middot; Source: ' + escapeHtml(r.sourceType) : '';
+    const sourceType = r.sourceType ? ' &middot; Source: ' + escapeHtml(r.sourceType) : '';
 
     if (r.match) {
+      const evidence = r.evidence || {};
+      const source = evidence.source || {};
+      const intel = evidence.source_intelligence || {};
+      const risk = evidence.risk || {};
+      const contacts = intel.contacts || {};
+      const contact = contacts.emails && contacts.emails.length ? contacts.emails[0] : null;
+      const evidenceLink = r.takedown && r.takedown.evidence_url ? r.takedown.evidence_url : '';
+      const sourceMeta = source.domain ? '<div class="meta">Source: ' + escapeHtml(source.domain) + ' &middot; Risk: ' + escapeHtml(risk.level || 'unknown') + '</div>' : '';
+      const contactMeta = contact ? '<div class="meta">Contact: ' + escapeHtml(contact) + '</div>' : '';
       row.innerHTML =
         '<div class="top">' +
           '<span class="name">' + escapeHtml(r.match.name || 'Unknown') + '</span>' +
           '<span class="badge">' + escapeHtml(r.verdict) + '</span>' +
         '</div>' +
-        '<div class="meta">Confidence: ' + conf + faces + source + ' &middot; ' + escapeHtml(r.match.profile_id || '') + '</div>' +
-        '<div class="meta">' + escapeHtml(r.imageUrl || '') + '</div>';
+        '<div class="meta">Confidence: ' + conf + faces + sourceType + ' &middot; ' + escapeHtml(r.match.profile_id || '') + '</div>' +
+        sourceMeta +
+        contactMeta +
+        '<div class="meta">' + escapeHtml(r.imageUrl || '') + '</div>' +
+        (evidenceLink ? '<button class="packet-link" data-url="' + escapeHtml(evidenceLink) + '">Open evidence packet</button>' : '');
     } else if (r.error) {
       row.innerHTML =
         '<div class="top">' +
           '<span class="name">Image fetch failed</span>' +
           '<span class="badge warn">SKIPPED</span>' +
         '</div>' +
-        '<div class="meta">' + escapeHtml(r.error) + source + '</div>' +
+        '<div class="meta">' + escapeHtml(r.error) + sourceType + '</div>' +
         '<div class="meta">' + escapeHtml(r.imageUrl || '') + '</div>';
     } else {
       row.innerHTML =
@@ -105,10 +117,13 @@ function renderResults(results) {
           '<span class="name">No registered match</span>' +
           '<span class="badge ok">' + escapeHtml(r.verdict || 'NO_MATCH') + '</span>' +
         '</div>' +
-        '<div class="meta">Confidence: ' + conf + faces + source + '</div>' +
+        '<div class="meta">Confidence: ' + conf + faces + sourceType + '</div>' +
         '<div class="meta">' + escapeHtml(r.imageUrl || '') + '</div>';
     }
     resultsEl.appendChild(row);
+  });
+  resultsEl.querySelectorAll('[data-url]').forEach(btn => {
+    btn.addEventListener('click', () => chrome.tabs.create({ url: btn.dataset.url }));
   });
 }
 

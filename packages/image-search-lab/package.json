@@ -1,0 +1,14 @@
+{
+  "name": "@metxt/image-search-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Experimental text-guided image search and similarity scoring for me.txt research.",
+  "main": "index.js",
+  "bin": {
+    "metxt-image-search-lab": "index.js"
+  },
+  "scripts": {
+    "search": "node index.js search",
+    "test": "node --test test/*.test.js"
+  }
+}
