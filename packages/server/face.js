@@ -49,10 +49,25 @@ function mockDescriptor(buffer) {
   return Array.from(vec);
 }
 
+function isJpegOrPng(buf) {
+  if (!buf || buf.length < 8) return false;
+  const jpeg = buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+  const png = buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+  return jpeg || png;
+}
+
 async function getDescriptor(buffer) {
   if (modelsLoaded && faceapi && canvasLib) {
+    if (!isJpegOrPng(buffer)) {
+      console.warn('[face] Unsupported image format (not JPEG/PNG), falling back to mock');
+      return mockDescriptor(buffer);
+    }
     try {
       const img = await canvasLib.loadImage(buffer);
+      if (!img || !img.width || !img.height) {
+        console.warn('[face] Decoded image has zero dimensions, falling back to mock');
+        return mockDescriptor(buffer);
+      }
       const detection = await faceapi
         .detectSingleFace(img)
         .withFaceLandmarks()

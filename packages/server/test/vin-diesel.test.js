@@ -18,7 +18,10 @@ const MATCH_THRESHOLD = 0.6;
 
 async function fetchImage(url) {
   const resp = await fetch(url, {
-    headers: { 'User-Agent': 'metxt-test/0.1' },
+    headers: {
+      'User-Agent': 'metxt-test/0.1',
+      Accept: 'image/jpeg,image/png',
+    },
     redirect: 'follow',
   });
   if (!resp.ok) throw new Error(`failed to fetch ${url}: HTTP ${resp.status}`);
