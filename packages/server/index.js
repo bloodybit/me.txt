@@ -249,6 +249,10 @@ app.post('/api/match', upload.single('image'), async (req, res) => {
   }
 });
 
+app.get('/api/hello', (req, res) => {
+  res.json({ message: 'hello world' });
+});
+
 app.get('/api/hog/status', (req, res) => {
   res.json(hog.status());
 });
