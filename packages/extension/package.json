@@ -1,0 +1,6 @@
+{
+  "name": "@metxt/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome MV3 extension — scans pages for registered likenesses."
+}

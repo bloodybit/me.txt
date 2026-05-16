@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>me.txt — Likeness Consent Registry</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo" data-screen-link="register">me<span>.txt</span></div>
+  <div class="nav-links">
+    <button class="nav-link active" data-screen-link="register">Register</button>
+    <button class="nav-link" data-screen-link="scan">Scan</button>
+    <button class="nav-link" data-screen-link="dashboard">Dashboard</button>
+  </div>
+</nav>
+
+<!-- REGISTER -->
+<div id="screen-register" class="screen active" data-decision="5">
+  <div class="register-container">
+    <div id="register-form">
+      <div class="register-header">
+        <h1>me<span>.txt</span></h1>
+        <p>Register your likeness</p>
+      </div>
+
+      <div id="register-error" class="form-error" style="display:none;"></div>
+
+      <div class="form-section">
+        <label class="form-label">Your Photos</label>
+        <div class="photo-row" id="photo-row">
+          <label class="photo-slot">
+            <input type="file" accept="image/*" data-photo-input />
+            <span class="plus">+</span>
+            <span class="label">Upload</span>
+          </label>
+          <label class="photo-slot">
+            <input type="file" accept="image/*" data-photo-input />
+            <span class="plus">+</span>
+            <span class="label">Upload</span>
+          </label>
+          <label class="photo-slot">
+            <input type="file" accept="image/*" data-photo-input />
+            <span class="plus">+</span>
+            <span class="label">Upload</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label" for="reg-name">Full Name</label>
+        <input class="form-input" id="reg-name" type="text" placeholder="Your name" autocomplete="name" />
+      </div>
+
+      <div class="form-section">
+        <label class="form-label">Consent Rules</label>
+        <div class="consent-list">
+          <div class="consent-row">
+            <span>Editorial use</span>
+            <div class="toggle on" data-consent="editorial"></div>
+          </div>
+          <div class="consent-row">
+            <span>Commercial use</span>
+            <div class="toggle" data-consent="commercial"></div>
+          </div>
+          <div class="consent-row">
+            <span>AI training</span>
+            <div class="toggle" data-consent="ai_training"></div>
+          </div>
+          <div class="consent-row">
+            <span>Satire / parody</span>
+            <div class="toggle" data-consent="satire"></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="register-submit">Register &amp; Generate me.txt</button>
+    </div>
+
+    <div id="register-success" class="register-success">
+      <div class="check-circle">&#10003;</div>
+      <h2>Likeness Registered</h2>
+      <p>Your me.txt profile has been created</p>
+      <div class="metxt-preview" id="metxt-output" data-decision="3"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCAN -->
+<div id="screen-scan" class="screen" data-decision="4">
+  <div class="scan-container">
+    <div class="scan-header">
+      <h2>Extension Scanner</h2>
+      <p>Simulates the Chrome extension scanning a web page for registered likenesses</p>
+    </div>
+
+    <div class="scan-viewport" id="scan-viewport">
+      <div class="scan-placeholder" id="scan-placeholder">
+        <div class="icon">&#128269;</div>
+        <p>Click "Scan Page" to simulate detection</p>
+      </div>
+
+      <div class="fake-page" id="fake-page">
+        <div class="fake-page-header">
+          <div style="display:flex;gap:4px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#ff5f57;"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#febc2e;"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#28c840;"></div>
+          </div>
+          <div class="fake-url-bar">ai-generated-content.example.com/gallery/portrait-2847</div>
+        </div>
+        <div class="fake-page-content">
+          <div class="fake-article-text">
+            <div class="headline">AI-Generated Portrait Collection</div>
+            <div class="byline">Posted 2 hours ago &middot; AI Art Gallery</div>
+            <div class="body-line" style="width:100%"></div>
+            <div class="body-line" style="width:85%"></div>
+            <div class="body-line" style="width:92%"></div>
+            <div class="body-line" style="width:78%"></div>
+            <div class="body-line" style="width:100%"></div>
+            <div class="body-line" style="width:65%"></div>
+            <div class="body-line" style="width:88%"></div>
+            <div class="body-line" style="width:73%"></div>
+          </div>
+          <div class="fake-face-container" id="face-target">
+            <div class="fake-face"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scan-line" id="scan-line"></div>
+      <div class="face-detect-box" id="detect-box"></div>
+      <div class="ai-stop-badge" id="ai-stop-badge">AI STOP</div>
+      <div class="info-bar" id="info-bar">
+        <div class="info-bar-header">
+          <div class="info-bar-dot"></div>
+          <span class="info-bar-title">REGISTERED LIKENESS — NO CONSENT</span>
+        </div>
+        <div class="info-bar-details">
+          Match: <span class="val" id="match-name">Demo User</span> &middot;
+          Confidence: <span class="conf" id="match-confidence">94.2%</span><br />
+          Profile: <span class="val" id="match-profile">me_demo01</span> &middot;
+          <span class="link" data-screen-link="dashboard">View evidence packet &rarr;</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;">
+      <button class="scan-btn" id="scan-btn">&#9654; Scan Page</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="screen-dashboard" class="screen">
+  <div class="dash-container">
+    <div class="dash-header">
+      <h2>Consent Dashboard</h2>
+      <p>Manage permissions and view who queried your profile</p>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-title">Your me.txt</div>
+      <div class="metxt-file-view" data-decision="3">
+        <div class="metxt-file-header">
+          <span class="path">/.well-known/me.txt</span>
+          <span>v0.1</span>
+        </div>
+        <div class="metxt-file-body" id="dash-metxt"></div>
+      </div>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-title">Consent Rules</div>
+      <div class="dash-consent-list" id="dash-consent-list">
+        <div class="dash-consent-row">
+          <span class="use-label">Editorial use</span>
+          <div class="toggle on" data-dash-consent="editorial"></div>
+        </div>
+        <div class="dash-consent-row">
+          <span class="use-label">Commercial use</span>
+          <div class="toggle" data-dash-consent="commercial"></div>
+        </div>
+        <div class="dash-consent-row">
+          <span class="use-label">AI training</span>
+          <div class="toggle" data-dash-consent="ai_training"></div>
+        </div>
+        <div class="dash-consent-row">
+          <span class="use-label">Satire / parody</span>
+          <div class="toggle" data-dash-consent="satire"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-title">Query Audit Log</div>
+      <div class="audit-log" id="audit-log">
+        <div class="audit-empty">No queries yet. Run a scan to see activity here.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

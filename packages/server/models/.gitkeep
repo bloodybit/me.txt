@@ -1,0 +1,14 @@
+# face-api.js model weights go here.
+#
+# Download from: https://github.com/vladmandic/face-api/tree/master/model
+#
+# Required files:
+#   ssd_mobilenetv1_model-weights_manifest.json
+#   ssd_mobilenetv1_model.bin (or sharded variants)
+#   face_landmark_68_model-weights_manifest.json
+#   face_landmark_68_model.bin
+#   face_recognition_model-weights_manifest.json
+#   face_recognition_model.bin
+#
+# If absent, the server falls back to deterministic mock descriptors so the
+# demo flow still works end-to-end (same image bytes -> same descriptor).
