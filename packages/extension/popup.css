@@ -7,9 +7,26 @@
   --text-secondary: #aaaaaa;
   --text-muted: #666666;
   --accent-blue: #64b5f6;
+  --accent-blue-on: #ffffff;
   --accent-blue-gradient: linear-gradient(135deg, #1a6dff, #4dabff);
   --accent-red: #ff1744;
   --accent-green: #4caf50;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-primary: #f4f6fb;
+    --bg-surface: #ffffff;
+    --bg-card: #ffffff;
+    --border-subtle: #d9deea;
+    --text-primary: #0c1126;
+    --text-secondary: #475067;
+    --text-muted: #8089a3;
+    --accent-blue: #1a6dff;
+    --accent-blue-on: #ffffff;
+    --accent-red: #d92038;
+    --accent-green: #2e8540;
+  }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -69,7 +86,7 @@ header { text-align: center; margin-bottom: 4px; }
   border: none;
   border-radius: 8px;
   padding: 11px;
-  color: var(--text-primary);
+  color: var(--accent-blue-on);
   font-weight: 600;
   cursor: pointer;
   font-size: 13px;
@@ -105,7 +122,7 @@ header { text-align: center; margin-bottom: 4px; }
 .result-row .name { font-weight: 600; }
 .result-row .badge {
   background: var(--accent-red);
-  color: white;
+  color: #ffffff;
   font-weight: 700;
   letter-spacing: 1px;
   font-size: 9px;
