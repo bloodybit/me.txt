@@ -3,29 +3,25 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { initFace, getDescriptor, matchDescriptor } = require('../face');
+const { initFace, getDescriptor, matchDescriptor, matchDescriptors } = require('../face');
 
-const SEED_URLS = [
-  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwj2m3QXkw69XTStiRWEZhwjZD3OwQenjmHtw2W5ntvi-tRGn1-9YMpdJXNt46Xa8COv_LPOXxEbTsxVfpNP5s8eeni1StZsG8KOoM6O4&s=10',
-  'https://upload.wikimedia.org/wikipedia/commons/8/83/Vin_Diesel_by_Gage_Skidmore_2.jpg?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original',
-  'https://ntvb.tmsimg.com/assets/assets/79719_v9_bc.jpg?w=360&h=480',
+const FIXTURE_DIR = path.join(__dirname, '..', 'fixtures', 'vin-diesel');
+const SEED_FIXTURES = [
+  'seed-wikimedia.jpg',
+  'seed-tms.jpg',
 ];
 
-const PROBE_URL = 'https://i.ytimg.com/vi/PPKrLPInTR0/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLClmeT3qnle0Cqx3ddgiWe2JfZP-A';
+const PROBE_FIXTURE = 'probe-youtube.jpg';
 
 const PROFILE_ID = 'me_vin01';
 const MATCH_THRESHOLD = 0.6;
 
-async function fetchImage(url) {
-  const resp = await fetch(url, {
-    headers: {
-      'User-Agent': 'metxt-test/0.1',
-      Accept: 'image/jpeg,image/png',
-    },
-    redirect: 'follow',
-  });
-  if (!resp.ok) throw new Error(`failed to fetch ${url}: HTTP ${resp.status}`);
-  return Buffer.from(await resp.arrayBuffer());
+function unitDescriptor(position) {
+  return Array.from({ length: 128 }, (_, index) => index === position ? 1 : 0);
+}
+
+function readFixture(fileName) {
+  return fs.readFileSync(path.join(FIXTURE_DIR, fileName));
 }
 
 function hasFaceApiModels() {
@@ -44,14 +40,14 @@ test('recognizes Vin Diesel from an unseen photo against seeded embeddings', asy
   assert.equal(loaded, true, 'face-api models should load successfully');
 
   const stored = [];
-  for (const url of SEED_URLS) {
-    const buffer = await fetchImage(url);
+  for (const fixture of SEED_FIXTURES) {
+    const buffer = readFixture(fixture);
     const descriptor = await getDescriptor(buffer);
-    assert.equal(descriptor.length, 128, `descriptor for seed ${url} should be 128-d`);
+    assert.equal(descriptor.length, 128, `descriptor for seed ${fixture} should be 128-d`);
     stored.push({ profile_id: PROFILE_ID, descriptor });
   }
 
-  const probeBuffer = await fetchImage(PROBE_URL);
+  const probeBuffer = readFixture(PROBE_FIXTURE);
   const probeDescriptor = await getDescriptor(probeBuffer);
   assert.equal(probeDescriptor.length, 128, 'probe descriptor should be 128-d');
 
@@ -63,4 +59,24 @@ test('recognizes Vin Diesel from an unseen photo against seeded embeddings', asy
     match.confidence > MATCH_THRESHOLD,
     `confidence ${match.confidence} should exceed threshold ${MATCH_THRESHOLD}`,
   );
+});
+
+test('matches a registered face when it is not the first detected face', () => {
+  const stored = [
+    { profile_id: PROFILE_ID, descriptor: unitDescriptor(42) },
+  ];
+
+  const match = matchDescriptors(
+    [
+      unitDescriptor(7),
+      unitDescriptor(42),
+    ],
+    stored,
+    0.9,
+  );
+
+  assert.ok(match, 'expected the second detected face to match the registered profile');
+  assert.equal(match.profile_id, PROFILE_ID);
+  assert.equal(match.descriptor_index, 1);
+  assert.equal(match.confidence, 1);
 });

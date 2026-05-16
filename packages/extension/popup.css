@@ -99,6 +99,8 @@ header { text-align: center; margin-bottom: 4px; }
   gap: 4px;
 }
 .result-row.match { border-color: rgba(255, 23, 68, 0.5); }
+.result-row.failed { border-color: rgba(255, 193, 7, 0.45); }
+.result-row.miss { opacity: 0.88; }
 .result-row .top { display: flex; justify-content: space-between; align-items: center; }
 .result-row .name { font-weight: 600; }
 .result-row .badge {
@@ -113,6 +115,10 @@ header { text-align: center; margin-bottom: 4px; }
 .result-row .badge.ok {
   background: rgba(76, 175, 80, 0.15);
   color: var(--accent-green);
+}
+.result-row .badge.warn {
+  background: rgba(255, 193, 7, 0.16);
+  color: #ffc107;
 }
 .result-row .meta { color: var(--text-muted); font-size: 10px; word-break: break-all; }
 

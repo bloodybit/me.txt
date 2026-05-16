@@ -65,24 +65,49 @@ function renderResults(results) {
     return;
   }
   const matches = results.filter(r => r.match);
+  const failures = results.filter(r => r.error || r.verdict === 'FETCH_FAILED');
+  const misses = results.filter(r => !r.match && !r.error && r.verdict !== 'FETCH_FAILED');
   if (matches.length === 0) {
-    setStatus('Scanned ' + results.length + ' image(s). No registered likenesses detected.', 'success');
+    const failedText = failures.length ? ', ' + failures.length + ' failed' : '';
+    setStatus('Scanned ' + results.length + ' image(s): ' + misses.length + ' no match' + failedText + '.', failures.length ? 'error' : 'success');
   } else {
-    setStatus('Found ' + matches.length + ' registered likeness(es).', 'error');
+    setStatus('Found ' + matches.length + ' registered likeness(es) across ' + results.length + ' scanned image(s).', 'error');
   }
-  matches.forEach(r => {
+
+  results.forEach(r => {
     const row = document.createElement('div');
-    row.className = 'result-row match';
-    const conf = r.match.confidence != null
+    row.className = 'result-row ' + (r.match ? 'match' : r.error ? 'failed' : 'miss');
+    const conf = r.match && r.match.confidence != null
       ? (r.match.confidence * 100).toFixed(1) + '%'
       : 'n/a';
-    row.innerHTML =
-      '<div class="top">' +
-        '<span class="name">' + escapeHtml(r.match.name || 'Unknown') + '</span>' +
-        '<span class="badge">' + escapeHtml(r.verdict) + '</span>' +
-      '</div>' +
-      '<div class="meta">Confidence: ' + conf + ' &middot; ' + escapeHtml(r.match.profile_id || '') + '</div>' +
-      '<div class="meta">' + escapeHtml(r.imageUrl || '') + '</div>';
+    const faces = r.faces_detected != null ? ' &middot; Faces: ' + escapeHtml(r.faces_detected) : '';
+    const source = r.sourceType ? ' &middot; Source: ' + escapeHtml(r.sourceType) : '';
+
+    if (r.match) {
+      row.innerHTML =
+        '<div class="top">' +
+          '<span class="name">' + escapeHtml(r.match.name || 'Unknown') + '</span>' +
+          '<span class="badge">' + escapeHtml(r.verdict) + '</span>' +
+        '</div>' +
+        '<div class="meta">Confidence: ' + conf + faces + source + ' &middot; ' + escapeHtml(r.match.profile_id || '') + '</div>' +
+        '<div class="meta">' + escapeHtml(r.imageUrl || '') + '</div>';
+    } else if (r.error) {
+      row.innerHTML =
+        '<div class="top">' +
+          '<span class="name">Image fetch failed</span>' +
+          '<span class="badge warn">SKIPPED</span>' +
+        '</div>' +
+        '<div class="meta">' + escapeHtml(r.error) + source + '</div>' +
+        '<div class="meta">' + escapeHtml(r.imageUrl || '') + '</div>';
+    } else {
+      row.innerHTML =
+        '<div class="top">' +
+          '<span class="name">No registered match</span>' +
+          '<span class="badge ok">' + escapeHtml(r.verdict || 'NO_MATCH') + '</span>' +
+        '</div>' +
+        '<div class="meta">Confidence: ' + conf + faces + source + '</div>' +
+        '<div class="meta">' + escapeHtml(r.imageUrl || '') + '</div>';
+    }
     resultsEl.appendChild(row);
   });
 }

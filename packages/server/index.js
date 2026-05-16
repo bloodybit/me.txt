@@ -17,7 +17,7 @@ const {
   logQuery,
   getAuditLog,
 } = require('./db');
-const { initFace, getDescriptor, matchDescriptor } = require('./face');
+const { initFace, getDescriptor, getDescriptors, matchDescriptors } = require('./face');
 const { generateMeTxt, USE_TYPES } = require('./metxt');
 
 const app = express();
@@ -143,9 +143,9 @@ app.post('/api/match', upload.single('image'), async (req, res) => {
       });
     }
 
-    const descriptor = await getDescriptor(buffer);
+    const descriptors = await getDescriptors(buffer);
     const stored = getAllEmbeddings();
-    const match = matchDescriptor(descriptor, stored, MATCH_THRESHOLD);
+    const match = matchDescriptors(descriptors, stored, MATCH_THRESHOLD);
 
     const imageHash = sha256(buffer);
 
@@ -154,6 +154,7 @@ app.post('/api/match', upload.single('image'), async (req, res) => {
       return res.json({
         verdict: 'NO_MATCH',
         match: null,
+        faces_detected: descriptors.length,
         source: {
           url: sourceUrl,
           image_hash: 'sha256:' + imageHash,
@@ -177,7 +178,9 @@ app.post('/api/match', upload.single('image'), async (req, res) => {
         name: profile.name,
         profile_id: match.profile_id,
         confidence: Number(match.confidence.toFixed(4)),
+        face_index: match.descriptor_index,
       },
+      faces_detected: descriptors.length,
       consent: {
         default: 'deny',
         applicable_rule: applicable,
