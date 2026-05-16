@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "me.txt — Likeness Detector",
+  "version": "0.1.0",
+  "description": "Scans web pages for registered likenesses used without consent.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "me.txt scanner"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

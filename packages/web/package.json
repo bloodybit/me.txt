@@ -1,0 +1,6 @@
+{
+  "name": "@metxt/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "me.txt registration + consent dashboard (served by the API server)"
+}

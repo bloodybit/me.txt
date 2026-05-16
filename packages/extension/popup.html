@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup">
+    <header>
+      <div class="logo">me<span>.txt</span></div>
+      <div class="tagline">Likeness Scanner</div>
+    </header>
+
+    <div class="api-row">
+      <label for="api-url">API endpoint</label>
+      <input id="api-url" type="text" value="http://localhost:3000" />
+    </div>
+
+    <button id="scan-btn" class="btn-primary">Scan This Page</button>
+
+    <div id="status" class="status"></div>
+
+    <div id="results" class="results"></div>
+
+    <footer>
+      <span id="version">v0.1</span>
+      <a id="open-dashboard" href="#">Open dashboard &rarr;</a>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
