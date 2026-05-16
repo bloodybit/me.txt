@@ -108,6 +108,10 @@ function getProfile(id) {
   return db.prepare('SELECT * FROM profiles WHERE id = ?').get(id);
 }
 
+function deleteProfile(id) {
+  db.prepare('DELETE FROM profiles WHERE id = ?').run(id);
+}
+
 function listProfiles() {
   return db.prepare('SELECT * FROM profiles ORDER BY created_at DESC').all();
 }
@@ -143,6 +147,7 @@ module.exports = {
   getAllEmbeddings,
   getProfile,
   getProfileByHandle,
+  deleteProfile,
   listProfiles,
   updateConsent,
   getConsentRules,
