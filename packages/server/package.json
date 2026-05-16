@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "seed": "node seed.js",
-    "test": "node --test test/"
+    "test": "node --test test/",
+    "download-models": "node scripts/download-models.js",
+    "postinstall": "node scripts/download-models.js"
   },
   "dependencies": {
     "@vladmandic/face-api": "^1.7.13",
