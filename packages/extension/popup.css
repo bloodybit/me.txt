@@ -29,25 +29,40 @@ header { text-align: center; margin-bottom: 4px; }
 .logo span { color: var(--accent-blue); }
 .tagline { color: var(--text-muted); font-size: 11px; margin-top: 2px; }
 
-.api-row { display: flex; flex-direction: column; gap: 4px; }
-.api-row label {
+.tab-row { display: flex; flex-direction: column; gap: 4px; }
+.tab-row label {
   color: var(--text-muted);
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
 }
-.api-row input {
+.tab-info {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
-  padding: 7px 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+.tab-title {
   color: var(--text-primary);
   font-size: 12px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  outline: none;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.api-row input:focus { border-color: var(--accent-blue); }
+.tab-url {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .btn-primary {
   background: var(--accent-blue-gradient);

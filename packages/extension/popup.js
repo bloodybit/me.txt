@@ -1,25 +1,57 @@
 const DEFAULT_API = 'http://localhost:3000';
 
-const apiInput = document.getElementById('api-url');
 const scanBtn = document.getElementById('scan-btn');
 const statusEl = document.getElementById('status');
 const resultsEl = document.getElementById('results');
 const dashLink = document.getElementById('open-dashboard');
+const tabTitleEl = document.getElementById('tab-title');
+const tabUrlEl = document.getElementById('tab-url');
+
+let apiUrl = DEFAULT_API;
+let activeTab = null;
 
 chrome.storage.local.get(['apiUrl'], data => {
-  if (data.apiUrl) apiInput.value = data.apiUrl;
+  if (data.apiUrl) apiUrl = data.apiUrl;
+  dashLink.href = apiUrl + '/#dashboard';
 });
 
-apiInput.addEventListener('change', () => {
-  chrome.storage.local.set({ apiUrl: apiInput.value.trim() });
-  dashLink.href = apiInput.value.trim();
-});
-
-dashLink.href = apiInput.value.trim() || DEFAULT_API;
+dashLink.href = DEFAULT_API + '/#dashboard';
 dashLink.addEventListener('click', e => {
   e.preventDefault();
-  chrome.tabs.create({ url: (apiInput.value.trim() || DEFAULT_API) + '/#dashboard' });
+  chrome.tabs.create({ url: apiUrl.replace(/\/$/, '') + '/#dashboard' });
 });
+
+function isScannable(url) {
+  if (!url) return false;
+  return /^https?:\/\//i.test(url);
+}
+
+async function loadActiveTab() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    activeTab = tab || null;
+    if (!tab) {
+      tabTitleEl.textContent = 'No active tab';
+      tabUrlEl.textContent = '—';
+      scanBtn.disabled = true;
+      return;
+    }
+    tabTitleEl.textContent = tab.title || '(untitled page)';
+    tabUrlEl.textContent = tab.url || '—';
+    if (!isScannable(tab.url)) {
+      scanBtn.disabled = true;
+      setStatus('This page cannot be scanned (only http/https pages are supported).', '');
+    } else {
+      scanBtn.disabled = false;
+    }
+  } catch (err) {
+    tabTitleEl.textContent = 'Unable to read active tab';
+    tabUrlEl.textContent = '—';
+    scanBtn.disabled = true;
+  }
+}
+
+loadActiveTab();
 
 function setStatus(text, cls = '') {
   statusEl.textContent = text;
@@ -64,21 +96,21 @@ function escapeHtml(s) {
 }
 
 scanBtn.addEventListener('click', async () => {
-  const apiUrl = (apiInput.value || DEFAULT_API).replace(/\/$/, '');
-  chrome.storage.local.set({ apiUrl });
+  const endpoint = (apiUrl || DEFAULT_API).replace(/\/$/, '');
 
   scanBtn.disabled = true;
   setStatus('Scanning page…', '');
   resultsEl.innerHTML = '';
 
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = activeTab || (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
     if (!tab || !tab.id) throw new Error('No active tab');
+    if (!isScannable(tab.url)) throw new Error('This page cannot be scanned.');
 
     const resp = await chrome.runtime.sendMessage({
       type: 'SCAN_TAB',
       tabId: tab.id,
-      apiUrl,
+      apiUrl: endpoint,
     });
 
     if (!resp || !resp.ok) {
