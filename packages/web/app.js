@@ -972,6 +972,7 @@
         '<div class="monitor-item-body">' +
           '<div class="monitor-item-title">' + esc(label) + ' · "' + esc(entry.keyword) + '"</div>' +
           '<div class="monitor-item-meta">' + esc(entry.domain) + ' · ' + esc(lastScanned) + '</div>' +
+          (entry.site === 'x' ? '<span class="monitor-item-provider">datahog.ai</span>' : '') +
         '</div>' +
         '<div class="monitor-item-actions">' +
           '<button class="monitor-scan-btn" data-monitor-scan="' + esc(entry.id) + '">Scan</button>' +
@@ -1096,27 +1097,70 @@
     );
     monitorResultsEl.innerHTML = '';
     results.forEach(result => {
+      const isTweet = result.source === 'x';
       const thumb = result.thumbnailUrl || result.imageUrl;
       const pageUrl = result.pageUrl || result.imageUrl || '#';
       const card = document.createElement('div');
-      card.className = 'monitor-card';
-      card.innerHTML =
-        '<div class="monitor-card-thumb">' +
-          (thumb ? '<img src="' + esc(thumb) + '" alt="" loading="lazy" />' : '<span>No image</span>') +
-        '</div>' +
-        '<div class="monitor-card-body">' +
-          '<div class="monitor-card-title">' + esc(result.title || 'Untitled listing') + '</div>' +
-          '<div class="monitor-card-url">' + esc(formatSource(pageUrl)) + '</div>' +
-          '<div class="monitor-card-actions">' +
-            '<a href="' + esc(pageUrl) + '" target="_blank" rel="noopener">Open listing</a>' +
-            (result.imageUrl ? '<a href="' + esc(result.imageUrl) + '" target="_blank" rel="noopener">Open image</a>' : '') +
+      card.className = 'monitor-card' + (isTweet ? ' monitor-card-tweet' : '');
+
+      if (isTweet) {
+        const author = result.author || {};
+        const metrics = result.metrics || {};
+        const images = result.images || [];
+        const tweetText = result.title || '';
+        const displayText = tweetText.length > 280 ? tweetText.slice(0, 277) + '...' : tweetText;
+        var imageGallery = '';
+        if (images.length) {
+          imageGallery = '<div class="tweet-images">' +
+            images.slice(0, 4).map(function (url) {
+              return '<img src="' + esc(url) + '" alt="" loading="lazy" class="tweet-img" />';
+            }).join('') +
+            '</div>';
+        }
+        card.innerHTML =
+          '<div class="monitor-card-body tweet-body">' +
+            '<div class="tweet-author">' +
+              '<span class="tweet-display-name">' + esc(author.displayName || 'Unknown') + '</span>' +
+              '<span class="tweet-username">@' + esc(author.username || '?') + '</span>' +
+              (result.createdAt ? '<span class="tweet-date">' + esc(formatDate(result.createdAt)) + '</span>' : '') +
+            '</div>' +
+            '<div class="monitor-card-title tweet-text">' + esc(displayText) + '</div>' +
+            imageGallery +
+            '<div class="tweet-metrics">' +
+              '<span title="Views">&#128065; ' + esc(formatCount(metrics.views)) + '</span>' +
+              '<span title="Likes">&#10084; ' + esc(formatCount(metrics.likes)) + '</span>' +
+              '<span title="Retweets">&#128260; ' + esc(formatCount(metrics.retweets)) + '</span>' +
+              '<span title="Replies">&#128172; ' + esc(formatCount(metrics.replies)) + '</span>' +
+              '<span title="Bookmarks">&#128278; ' + esc(formatCount(metrics.bookmarks)) + '</span>' +
+            '</div>' +
+            '<div class="monitor-card-actions">' +
+              '<a href="' + esc(pageUrl) + '" target="_blank" rel="noopener">Open tweet</a>' +
+            '</div>' +
           '</div>' +
-        '</div>' +
-        '<div class="monitor-card-enforcement">' +
-          '<button class="monitor-btn-takedown" title="File a takedown request">Take Down</button>' +
-          '<button class="monitor-btn-cnd" title="Send a Cease &amp; Desist letter">Cease &amp; Desist</button>' +
-          '<button class="monitor-btn-approved" title="Mark as approved (not infringing)">Approved</button>' +
-        '</div>';
+          '<div class="monitor-card-enforcement">' +
+            '<button class="monitor-btn-takedown" title="File a takedown request">Take Down</button>' +
+            '<button class="monitor-btn-cnd" title="Send a Cease &amp; Desist letter">Cease &amp; Desist</button>' +
+            '<button class="monitor-btn-approved" title="Mark as approved (not infringing)">Approved</button>' +
+          '</div>';
+      } else {
+        card.innerHTML =
+          '<div class="monitor-card-thumb">' +
+            (thumb ? '<img src="' + esc(thumb) + '" alt="" loading="lazy" />' : '<span>No image</span>') +
+          '</div>' +
+          '<div class="monitor-card-body">' +
+            '<div class="monitor-card-title">' + esc(result.title || 'Untitled listing') + '</div>' +
+            '<div class="monitor-card-url">' + esc(formatSource(pageUrl)) + '</div>' +
+            '<div class="monitor-card-actions">' +
+              '<a href="' + esc(pageUrl) + '" target="_blank" rel="noopener">Open listing</a>' +
+              (result.imageUrl ? '<a href="' + esc(result.imageUrl) + '" target="_blank" rel="noopener">Open image</a>' : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="monitor-card-enforcement">' +
+            '<button class="monitor-btn-takedown" title="File a takedown request">Take Down</button>' +
+            '<button class="monitor-btn-cnd" title="Send a Cease &amp; Desist letter">Cease &amp; Desist</button>' +
+            '<button class="monitor-btn-approved" title="Mark as approved (not infringing)">Approved</button>' +
+          '</div>';
+      }
       var siteDomain = data.site && data.site.domain ? data.site.domain : 'the site';
       card.querySelector('.monitor-btn-takedown').addEventListener('click', function () {
         if (card.querySelector('.monitor-card-overlay')) return;
@@ -1146,8 +1190,18 @@
     });
   }
 
+  function formatCount(n) {
+    if (n == null) return '0';
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return String(n);
+  }
+
   function describeScanMethod(method, fallbackReason) {
     if (!method) return '';
+    if (method === 'x-api') {
+      return 'Live results via X/Twitter search (The Hog).';
+    }
     if (method === 'etsy-api') {
       return 'Live results via Etsy Open API.';
     }

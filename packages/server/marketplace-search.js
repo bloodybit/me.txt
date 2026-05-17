@@ -9,6 +9,7 @@ if (!process.env.PUPPETEER_CACHE_DIR) {
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const etsyApi = require('./etsy-api');
+const xSearch = require('./x-search');
 
 puppeteer.use(StealthPlugin());
 
@@ -235,11 +236,48 @@ async function findEbay({ keyword, limit }) {
   return { results: scraped, method: 'puppeteer:ebay.com' };
 }
 
+async function findX({ keyword, limit }) {
+  const tweets = await xSearch.searchTweets({ query: keyword, maxTweets: limit, lang: 'en' });
+  const results = tweets.slice(0, limit).map((tweet, index) => {
+    const images = xSearch.extractImages(tweet.tweet_data);
+    return {
+      rank: index + 1,
+      title: tweet.text || '',
+      pageUrl: tweet.url || null,
+      imageUrl: images[0] || null,
+      thumbnailUrl: images[0] || null,
+      images: images,
+      width: null,
+      height: null,
+      source: 'x',
+      tweetId: tweet.id,
+      createdAt: tweet.created_at || null,
+      author: {
+        username: tweet.author_username || null,
+        displayName: tweet.author_display_name || null,
+      },
+      metrics: {
+        likes: tweet.like_count || 0,
+        retweets: tweet.retweet_count || 0,
+        replies: tweet.reply_count || 0,
+        views: tweet.view_count || 0,
+        quotes: tweet.quote_count || 0,
+        bookmarks: tweet.bookmark_count || 0,
+      },
+    };
+  });
+  return { results, method: 'x-api' };
+}
+
 const HANDLERS = {
   'etsy.com': findEtsy,
   'www.etsy.com': findEtsy,
   'ebay.com': findEbay,
   'www.ebay.com': findEbay,
+  'x.com': findX,
+  'twitter.com': findX,
+  'www.x.com': findX,
+  'www.twitter.com': findX,
 };
 
 function handlerFor(domain) {
