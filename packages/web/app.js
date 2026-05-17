@@ -964,7 +964,16 @@
             '<a href="' + esc(pageUrl) + '" target="_blank" rel="noopener">Open listing</a>' +
             (result.imageUrl ? '<a href="' + esc(result.imageUrl) + '" target="_blank" rel="noopener">Open image</a>' : '') +
           '</div>' +
+        '</div>' +
+        '<div class="monitor-card-enforcement">' +
+          '<button class="monitor-btn-takedown" title="File a takedown request">Take Down</button>' +
+          '<button class="monitor-btn-cnd" title="Send a Cease &amp; Desist letter">Cease &amp; Desist</button>' +
+          '<button class="monitor-btn-approved" title="Mark as approved (not infringing)">Approved</button>' +
         '</div>';
+      card.querySelector('.monitor-btn-approved').addEventListener('click', function () {
+        card.classList.add('removing');
+        card.addEventListener('transitionend', function () { card.remove(); });
+      });
       monitorResultsEl.appendChild(card);
     });
   }
