@@ -8,7 +8,8 @@
     "seed": "node seed.js",
     "test": "node --test test/*.test.js",
     "download-models": "node scripts/download-models.js",
-    "postinstall": "node scripts/download-models.js"
+    "install-browser": "node scripts/install-browser.js",
+    "postinstall": "node scripts/download-models.js && node scripts/install-browser.js"
   },
   "dependencies": {
     "@tensorflow/tfjs-node": "^4.22.0",
@@ -17,6 +18,9 @@
     "canvas": "^2.11.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "puppeteer": "^25.0.2",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }

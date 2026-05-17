@@ -33,6 +33,7 @@ const { generateMeTxt, USE_TYPES } = require('./metxt');
 const { buildEvidencePacket } = require('./evidence');
 const hog = require('./hog');
 const { searchImage, searchDuckDuckGo, searchBrave } = require('../image-search-lab');
+const marketplaceSearch = require('./marketplace-search');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -457,42 +458,64 @@ app.post('/api/monitor/scan', async (req, res) => {
   const profile = getProfile(monitor.profile_id);
   if (!profile) return res.status(404).json({ error: 'profile not found' });
 
-  const query = `${monitor.keyword} site:${monitor.domain}`;
+  const ddgQuery = `${monitor.keyword} site:${monitor.domain}`;
+  const directHandler = marketplaceSearch.handlerFor(monitor.domain);
 
-  try {
-    const candidates = provider === 'brave'
-      ? await searchBrave(query, limit)
-      : await searchDuckDuckGo(query, limit);
+  let candidates = null;
+  let method = null;
+  let query = ddgQuery;
+  let fallbackReason = null;
 
-    if (monitor.id) touchMonitoredSiteScan(monitor.id);
-
-    res.json({
-      site: {
-        id: monitor.id,
-        profile_id: monitor.profile_id,
-        site: monitor.site,
-        domain: monitor.domain,
-        keyword: monitor.keyword,
-      },
-      query,
-      provider,
-      profile: { id: profile.id, name: profile.name, handle: profile.handle },
-      scanned_at: new Date().toISOString(),
-      results: candidates.map(c => ({
-        rank: c.rank,
-        title: c.title,
-        pageUrl: c.pageUrl,
-        imageUrl: c.imageUrl,
-        thumbnailUrl: c.thumbnailUrl,
-        width: c.width,
-        height: c.height,
-        source: c.source,
-      })),
-    });
-  } catch (err) {
-    console.error('[monitor-scan]', err);
-    res.status(502).json({ error: err.message || 'monitor scan failed' });
+  if (directHandler) {
+    try {
+      candidates = await directHandler({ keyword: monitor.keyword, limit });
+      method = `puppeteer:${monitor.domain.replace(/^www\./, '')}`;
+      query = monitor.keyword;
+    } catch (err) {
+      fallbackReason = err.message || 'direct marketplace scrape failed';
+      console.warn(`[monitor-scan] ${monitor.domain} direct scrape failed, falling back to ${provider}:`, fallbackReason);
+    }
   }
+
+  if (!candidates) {
+    try {
+      candidates = provider === 'brave'
+        ? await searchBrave(ddgQuery, limit)
+        : await searchDuckDuckGo(ddgQuery, limit);
+      method = directHandler ? `${provider}-fallback` : provider;
+    } catch (err) {
+      console.error('[monitor-scan]', err);
+      return res.status(502).json({ error: err.message || 'monitor scan failed', fallback_reason: fallbackReason });
+    }
+  }
+
+  if (monitor.id) touchMonitoredSiteScan(monitor.id);
+
+  res.json({
+    site: {
+      id: monitor.id,
+      profile_id: monitor.profile_id,
+      site: monitor.site,
+      domain: monitor.domain,
+      keyword: monitor.keyword,
+    },
+    query,
+    provider,
+    method,
+    fallback_reason: fallbackReason,
+    profile: { id: profile.id, name: profile.name, handle: profile.handle },
+    scanned_at: new Date().toISOString(),
+    results: candidates.map(c => ({
+      rank: c.rank,
+      title: c.title,
+      pageUrl: c.pageUrl,
+      imageUrl: c.imageUrl,
+      thumbnailUrl: c.thumbnailUrl,
+      width: c.width,
+      height: c.height,
+      source: c.source,
+    })),
+  });
 });
 
 const RESERVED_HANDLES = new Set(['api', 'app.js', 'style.css', 'index.html', 'demo-face.svg', 'test-page.html', 'favicon.ico', '.well-known']);

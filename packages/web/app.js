@@ -934,10 +934,12 @@
         'Findings on ' + (data.site && data.site.domain ? data.site.domain : 'site') +
         ' for "' + (data.site && data.site.keyword ? data.site.keyword : '') + '"';
     }
+    const methodLabel = data && data.method ? describeScanMethod(data.method, data.fallback_reason) : '';
     setMonitorStatus(
-      results.length
+      (results.length
         ? 'Found ' + results.length + ' candidate listing(s). Review for unauthorized likeness use.'
-        : 'No public listings detected on this site for this keyword right now.'
+        : 'No public listings detected on this site for this keyword right now.') +
+      (methodLabel ? '  ·  ' + methodLabel : '')
     );
     monitorResultsEl.innerHTML = '';
     results.forEach(result => {
@@ -959,6 +961,19 @@
         '</div>';
       monitorResultsEl.appendChild(card);
     });
+  }
+
+  function describeScanMethod(method, fallbackReason) {
+    if (!method) return '';
+    if (method.startsWith('puppeteer:')) {
+      return 'Live scrape via headless Chrome (' + method.slice('puppeteer:'.length) + ').';
+    }
+    if (method.endsWith('-fallback')) {
+      const base = method.replace('-fallback', '');
+      const reason = fallbackReason ? ' Reason: ' + fallbackReason : '';
+      return 'Marketplace scrape blocked; fell back to ' + base.toUpperCase() + ' index search.' + reason;
+    }
+    return 'Source: ' + method.toUpperCase() + ' index search.';
   }
 
   async function refreshMonitor() {

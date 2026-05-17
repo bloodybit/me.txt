@@ -2,6 +2,7 @@ node_modules/
 data/
 packages/server/models/*
 !packages/server/models/.gitkeep
+.cache/
 *.log
 .DS_Store
 .env
