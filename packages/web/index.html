@@ -19,9 +19,9 @@
 <body>
 
 <nav class="nav">
-  <div class="nav-logo" data-screen-link="register">me<span>.txt</span></div>
+  <div class="nav-logo" data-screen-link="landing">me<span>.txt</span></div>
   <div class="nav-links">
-    <button class="nav-link nav-primary active" data-screen-link="register">Register</button>
+    <button class="nav-link nav-primary" data-screen-link="register">Register</button>
     <button class="nav-link nav-primary" data-screen-link="monitor">Monitor</button>
     <button class="nav-link nav-primary" data-screen-link="browse">Browse</button>
     <button class="nav-link" data-screen-link="scan">Scan</button>
@@ -34,8 +34,179 @@
   </div>
 </nav>
 
+<!-- LANDING -->
+<div id="screen-landing" class="screen active">
+  <div class="landing-hero">
+    <div class="landing-hero-inner">
+      <h1 class="landing-title">me<span>.txt</span></h1>
+      <p class="landing-subtitle">The open standard for human likeness rights</p>
+      <p class="landing-desc">Like <code>robots.txt</code> tells crawlers what they can index, <code>me.txt</code> tells AI systems what they can do with your face. Register once. Enforce everywhere.</p>
+      <button class="btn-primary landing-cta" data-screen-link="register">Register Your Likeness</button>
+    </div>
+  </div>
+
+  <div class="landing-section">
+    <div class="landing-section-inner">
+      <h2 class="landing-section-title">Why me.txt?</h2>
+      <div class="landing-cards">
+        <div class="landing-card">
+          <div class="landing-card-icon">&#128566;</div>
+          <h3>Your face is being used</h3>
+          <p>AI models train on billions of images scraped from the web. Deepfakes, synthetic ads, and AI-generated merch use real faces without consent. There is no opt-out mechanism &mdash; until now.</p>
+        </div>
+        <div class="landing-card">
+          <div class="landing-card-icon">&#128220;</div>
+          <h3>A machine-readable consent file</h3>
+          <p>me.txt is a plain-text file that declares who you are, what likeness data is registered, and exactly what uses you allow or deny &mdash; readable by any system, enforceable by anyone.</p>
+        </div>
+        <div class="landing-card">
+          <div class="landing-card-icon">&#128737;</div>
+          <h3>Evidence-backed enforcement</h3>
+          <p>When someone uses your likeness without permission, me.txt generates timestamped evidence packets with match confidence, source URLs, and consent status &mdash; ready for takedown requests.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="landing-section landing-section-alt">
+    <div class="landing-section-inner">
+      <h2 class="landing-section-title">How it works</h2>
+      <div class="landing-steps">
+        <div class="landing-step">
+          <div class="landing-step-num">1</div>
+          <div class="landing-step-body">
+            <h3>Upload your photos</h3>
+            <p>Provide one or more photos of yourself. The system extracts facial embeddings &mdash; mathematical representations of your face &mdash; and stores them securely.</p>
+          </div>
+        </div>
+        <div class="landing-step">
+          <div class="landing-step-num">2</div>
+          <div class="landing-step-body">
+            <h3>Set your consent rules</h3>
+            <p>Choose exactly what uses you allow: editorial, commercial, AI training, satire. Deny everything by default, then allow only what you approve.</p>
+          </div>
+        </div>
+        <div class="landing-step">
+          <div class="landing-step-num">3</div>
+          <div class="landing-step-body">
+            <h3>Get your me.txt</h3>
+            <p>A permanent, public endpoint serves your consent file. Any AI system, platform, or rights-management tool can query it to check your permissions before using your likeness.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="landing-section">
+    <div class="landing-section-inner">
+      <h2 class="landing-section-title">Example me.txt files</h2>
+      <p class="landing-examples-desc">Every person controls their own rules. Here are three examples showing different consent configurations:</p>
+      <div class="landing-examples">
+        <div class="landing-example">
+          <div class="landing-example-label">Journalist &mdash; allows editorial only</div>
+          <pre class="landing-example-code"><span class="comment"># me.txt v0.1</span>
+<span class="comment"># Human Likeness Consent Registry</span>
+
+<span class="key">Identity:</span> Sarah Chen
+<span class="key">ID:</span> me_a7c3f12
+
+<span class="key">Likeness-Face:</span> registered
+<span class="key">Likeness-Voice:</span> not-registered
+
+<span class="key">Default-Permission:</span> deny
+
+<span class="allow">Allow: editorial</span>
+<span class="deny">Deny: commercial</span>
+<span class="deny">Deny: ai-training</span>
+<span class="deny">Deny: satire</span>
+
+<span class="key">Match-Endpoint:</span> /api/match
+<span class="key">Profile:</span> /api/profile/me_a7c3f12
+<span class="key">Self:</span> /sarah-chen/me.txt</pre>
+        </div>
+        <div class="landing-example">
+          <div class="landing-example-label">Actor &mdash; allows editorial + satire</div>
+          <pre class="landing-example-code"><span class="comment"># me.txt v0.1</span>
+<span class="comment"># Human Likeness Consent Registry</span>
+
+<span class="key">Identity:</span> Marcus Rivera
+<span class="key">ID:</span> me_d4e8b09
+
+<span class="key">Likeness-Face:</span> registered
+<span class="key">Likeness-Voice:</span> not-registered
+
+<span class="key">Default-Permission:</span> deny
+
+<span class="allow">Allow: editorial</span>
+<span class="deny">Deny: commercial</span>
+<span class="deny">Deny: ai-training</span>
+<span class="allow">Allow: satire</span>
+
+<span class="key">Match-Endpoint:</span> /api/match
+<span class="key">Profile:</span> /api/profile/me_d4e8b09
+<span class="key">Self:</span> /marcus-rivera/me.txt</pre>
+        </div>
+        <div class="landing-example">
+          <div class="landing-example-label">Influencer &mdash; denies everything</div>
+          <pre class="landing-example-code"><span class="comment"># me.txt v0.1</span>
+<span class="comment"># Human Likeness Consent Registry</span>
+
+<span class="key">Identity:</span> Aiko Tanaka
+<span class="key">ID:</span> me_f1b2c56
+
+<span class="key">Likeness-Face:</span> registered
+<span class="key">Likeness-Voice:</span> not-registered
+
+<span class="key">Default-Permission:</span> deny
+
+<span class="deny">Deny: editorial</span>
+<span class="deny">Deny: commercial</span>
+<span class="deny">Deny: ai-training</span>
+<span class="deny">Deny: satire</span>
+
+<span class="key">Match-Endpoint:</span> /api/match
+<span class="key">Profile:</span> /api/profile/me_f1b2c56
+<span class="key">Self:</span> /aiko-tanaka/me.txt</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="landing-section landing-section-alt">
+    <div class="landing-section-inner">
+      <h2 class="landing-section-title">What you get</h2>
+      <div class="landing-features">
+        <div class="landing-feature">
+          <span class="landing-feature-tag allow-tag">Scan</span>
+          <p>Test any webpage against the registry. If a face matches a registered profile, the system flags consent violations in real time.</p>
+        </div>
+        <div class="landing-feature">
+          <span class="landing-feature-tag deny-tag">Monitor</span>
+          <p>Watch marketplaces like Etsy, Amazon, and Redbubble for unauthorized merch that uses your likeness. Get alerts and evidence.</p>
+        </div>
+        <div class="landing-feature">
+          <span class="landing-feature-tag key-tag">Dashboard</span>
+          <p>Update consent rules anytime. View your audit log, inspect source intelligence, and download evidence packets for enforcement.</p>
+        </div>
+        <div class="landing-feature">
+          <span class="landing-feature-tag key-tag">Browse</span>
+          <p>Explore the public registry. See who has registered and what consent rules they&rsquo;ve set &mdash; full transparency for everyone.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="landing-section">
+    <div class="landing-section-inner landing-bottom-cta">
+      <h2 class="landing-section-title">Claim your likeness</h2>
+      <p class="landing-desc">It takes 30 seconds to register. Your face, your rules.</p>
+      <button class="btn-primary landing-cta" data-screen-link="register">Get Started</button>
+    </div>
+  </div>
+</div>
+
 <!-- REGISTER -->
-<div id="screen-register" class="screen active" data-decision="5">
+<div id="screen-register" class="screen" data-decision="5">
   <div class="register-container">
     <div id="register-form">
       <div class="register-header">
