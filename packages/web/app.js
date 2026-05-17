@@ -935,11 +935,17 @@
         ' for "' + (data.site && data.site.keyword ? data.site.keyword : '') + '"';
     }
     const methodLabel = data && data.method ? describeScanMethod(data.method, data.fallback_reason) : '';
+    const validation = data && data.validation;
+    const removedDead = validation && validation.removed_dead ? validation.removed_dead : 0;
+    const deadLabel = removedDead
+      ? '  ·  Filtered out ' + removedDead + ' dead listing(s).'
+      : '';
     setMonitorStatus(
       (results.length
         ? 'Found ' + results.length + ' candidate listing(s). Review for unauthorized likeness use.'
         : 'No public listings detected on this site for this keyword right now.') +
-      (methodLabel ? '  ·  ' + methodLabel : '')
+      (methodLabel ? '  ·  ' + methodLabel : '') +
+      deadLabel
     );
     monitorResultsEl.innerHTML = '';
     results.forEach(result => {

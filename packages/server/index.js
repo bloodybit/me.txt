@@ -34,6 +34,7 @@ const { buildEvidencePacket } = require('./evidence');
 const hog = require('./hog');
 const { searchImage, searchDuckDuckGo, searchBrave } = require('../image-search-lab');
 const marketplaceSearch = require('./marketplace-search');
+const { validateCandidates } = require('./link-validator');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -465,6 +466,8 @@ app.post('/api/monitor/scan', async (req, res) => {
   let method = null;
   let query = ddgQuery;
   let fallbackReason = null;
+  let validatedDead = 0;
+  let validatedTotal = 0;
 
   if (directHandler) {
     try {
@@ -479,9 +482,13 @@ app.post('/api/monitor/scan', async (req, res) => {
 
   if (!candidates) {
     try {
-      candidates = provider === 'brave'
+      const indexResults = provider === 'brave'
         ? await searchBrave(ddgQuery, limit)
         : await searchDuckDuckGo(ddgQuery, limit);
+      const { results: live, removedDead, checked } = await validateCandidates(indexResults);
+      candidates = live;
+      validatedDead = removedDead;
+      validatedTotal = checked;
       method = directHandler ? `${provider}-fallback` : provider;
     } catch (err) {
       console.error('[monitor-scan]', err);
@@ -503,6 +510,7 @@ app.post('/api/monitor/scan', async (req, res) => {
     provider,
     method,
     fallback_reason: fallbackReason,
+    validation: { checked: validatedTotal, removed_dead: validatedDead },
     profile: { id: profile.id, name: profile.name, handle: profile.handle },
     scanned_at: new Date().toISOString(),
     results: candidates.map(c => ({
