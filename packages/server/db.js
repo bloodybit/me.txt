@@ -67,6 +67,7 @@ function initDb() {
   `);
   ensureHandleColumn();
   ensureAuditEvidenceColumn();
+  ensurePhotoColumn();
   purgeDemoEvidencePackets();
   return db;
 }
@@ -84,6 +85,17 @@ function ensureAuditEvidenceColumn() {
   if (!cols.some(c => c.name === 'evidence_id')) {
     db.exec('ALTER TABLE audit_log ADD COLUMN evidence_id TEXT');
   }
+}
+
+function ensurePhotoColumn() {
+  const cols = db.prepare("PRAGMA table_info(profiles)").all();
+  if (!cols.some(c => c.name === 'photo_filename')) {
+    db.exec('ALTER TABLE profiles ADD COLUMN photo_filename TEXT');
+  }
+}
+
+function setProfilePhoto(id, filename) {
+  db.prepare('UPDATE profiles SET photo_filename = ? WHERE id = ?').run(filename, id);
 }
 
 function purgeDemoEvidencePackets() {
@@ -259,6 +271,7 @@ module.exports = {
   initDb,
   createProfile,
   updateProfile,
+  setProfilePhoto,
   addEmbedding,
   deleteEmbeddings,
   getAllEmbeddings,

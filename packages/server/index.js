@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const os = require('os');
 const crypto = require('crypto');
 const cors = require('cors');
@@ -10,6 +11,7 @@ require('./env').loadEnv();
 const {
   initDb,
   createProfile,
+  setProfilePhoto,
   addEmbedding,
   getAllEmbeddings,
   getProfile,
@@ -49,7 +51,13 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024, files: 5 },
 });
 
+const DATA_DIR = process.env.METXT_DATA_DIR
+  ? path.resolve(process.env.METXT_DATA_DIR)
+  : path.join(__dirname, '..', '..', 'data');
+const PHOTOS_DIR = path.join(DATA_DIR, 'photos');
+
 initDb();
+fs.mkdirSync(PHOTOS_DIR, { recursive: true });
 initFace().catch(err => console.warn('[face] init failed:', err.message));
 
 function newProfileId() {
@@ -150,6 +158,12 @@ app.post('/api/register', upload.array('photos', 5), async (req, res) => {
       const descriptor = await getDescriptor(photo.buffer);
       addEmbedding(profileId, descriptor, sha256(photo.buffer));
     }
+
+    const firstPhoto = photos[0];
+    const ext = (firstPhoto.originalname || '').split('.').pop() || 'jpg';
+    const photoFilename = profileId + '.' + ext.toLowerCase().replace(/[^a-z0-9]/g, '');
+    fs.writeFileSync(path.join(PHOTOS_DIR, photoFilename), firstPhoto.buffer);
+    setProfilePhoto(profileId, photoFilename);
 
     for (const useType of USE_TYPES) {
       const allowed = consent[useType] === true || consent[useType] === 'allow';
@@ -332,6 +346,14 @@ app.get('/api/profile/:id', (req, res) => {
 
 app.get('/api/profiles', (req, res) => {
   res.json(listProfiles());
+});
+
+app.get('/api/profile/:id/photo', (req, res) => {
+  const profile = getProfile(req.params.id);
+  if (!profile || !profile.photo_filename) return res.status(404).end();
+  const filePath = path.join(PHOTOS_DIR, profile.photo_filename);
+  if (!fs.existsSync(filePath)) return res.status(404).end();
+  res.sendFile(filePath);
 });
 
 app.patch('/api/consent', (req, res) => {

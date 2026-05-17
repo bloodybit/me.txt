@@ -704,11 +704,15 @@
     browseGrid.innerHTML = '';
     filtered.forEach(profile => {
       const initials = profile.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      const photoUrl = '/api/profile/' + encodeURIComponent(profile.id) + '/photo';
       const card = document.createElement('div');
       card.className = 'browse-card';
       card.innerHTML =
         '<div class="browse-card-top">' +
-          '<div class="browse-card-avatar">' + esc(initials) + '</div>' +
+          '<div class="browse-card-avatar" data-browse-avatar="' + esc(profile.id) + '">' +
+            '<img src="' + esc(photoUrl) + '" alt="" />' +
+            '<span class="browse-card-avatar-fallback">' + esc(initials) + '</span>' +
+          '</div>' +
           '<div class="browse-card-info">' +
             '<div class="browse-card-name">' + esc(profile.name) + '</div>' +
             '<div class="browse-card-handle">' + esc(profile.handle ? '/' + profile.handle : profile.id) + '</div>' +
@@ -716,9 +720,17 @@
           '<div class="browse-card-date">' + esc(formatDate(profile.created_at)) + '</div>' +
         '</div>' +
         '<div class="browse-card-consent" data-browse-consent="' + esc(profile.id) + '"></div>' +
-        '<div class="browse-card-metxt" data-browse-metxt="' + esc(profile.id) + '" style="display:none;"></div>' +
-        '<button class="browse-card-metxt-toggle" data-browse-toggle="' + esc(profile.id) + '">Show me.txt</button>';
+        '<div class="browse-card-metxt-section">' +
+          '<div class="browse-card-metxt-label">me.txt</div>' +
+          '<div class="browse-card-metxt" data-browse-metxt="' + esc(profile.id) + '"></div>' +
+        '</div>';
       browseGrid.appendChild(card);
+
+      var avatarImg = card.querySelector('[data-browse-avatar="' + profile.id + '"] img');
+      if (avatarImg) {
+        avatarImg.addEventListener('load', function () { avatarImg.classList.add('loaded'); });
+        avatarImg.addEventListener('error', function () { avatarImg.style.display = 'none'; });
+      }
 
       loadBrowseDetail(profile.id);
     });
@@ -751,46 +763,38 @@
       }).join('');
     }
 
-    var toggleBtn = document.querySelector('[data-browse-toggle="' + profileId + '"]');
     var metxtEl = document.querySelector('[data-browse-metxt="' + profileId + '"]');
-    if (toggleBtn && metxtEl) {
-      toggleBtn.addEventListener('click', function () {
-        var showing = metxtEl.style.display !== 'none';
-        metxtEl.style.display = showing ? 'none' : 'block';
-        toggleBtn.textContent = showing ? 'Show me.txt' : 'Hide me.txt';
-        if (!showing && !metxtEl.innerHTML) {
-          var profile = data.profile;
-          var rules = data.consent || [];
-          var ruleMap = {};
-          rules.forEach(function (r) { ruleMap[r.use_type] = r.permission; });
-          var lines = [
-            '# me.txt v0.1',
-            '# Human Likeness Consent Registry',
-            '',
-            'Identity: ' + profile.name,
-            'ID: ' + profile.id,
-            '',
-            'Likeness-Face: registered',
-            'Likeness-Voice: not-registered',
-            '',
-            'Default-Permission: deny',
-            '',
-          ];
-          USE_TYPES.forEach(function (useType) {
-            var permission = ruleMap[useType] || 'deny';
-            var directive = permission === 'allow' ? 'Allow' : 'Deny';
-            lines.push(directive + ': ' + useType.replace(/_/g, '-'));
-          });
-          lines.push('');
-          lines.push('Match-Endpoint: ' + location.origin + '/api/match');
-          lines.push('Evidence-Endpoint: ' + location.origin + '/api/evidence');
-          lines.push('Profile: ' + location.origin + '/api/profile/' + profile.id);
-          if (profile.handle) {
-            lines.push('Self: ' + location.origin + '/' + profile.handle + '/me.txt');
-          }
-          metxtEl.innerHTML = colorizeMetxt(lines.join('\n'));
-        }
+    if (metxtEl) {
+      var profile = data.profile;
+      var rules = data.consent || [];
+      var ruleMap = {};
+      rules.forEach(function (r) { ruleMap[r.use_type] = r.permission; });
+      var lines = [
+        '# me.txt v0.1',
+        '# Human Likeness Consent Registry',
+        '',
+        'Identity: ' + profile.name,
+        'ID: ' + profile.id,
+        '',
+        'Likeness-Face: registered',
+        'Likeness-Voice: not-registered',
+        '',
+        'Default-Permission: deny',
+        '',
+      ];
+      USE_TYPES.forEach(function (useType) {
+        var permission = ruleMap[useType] || 'deny';
+        var directive = permission === 'allow' ? 'Allow' : 'Deny';
+        lines.push(directive + ': ' + useType.replace(/_/g, '-'));
       });
+      lines.push('');
+      lines.push('Match-Endpoint: ' + location.origin + '/api/match');
+      lines.push('Evidence-Endpoint: ' + location.origin + '/api/evidence');
+      lines.push('Profile: ' + location.origin + '/api/profile/' + profile.id);
+      if (profile.handle) {
+        lines.push('Self: ' + location.origin + '/' + profile.handle + '/me.txt');
+      }
+      metxtEl.innerHTML = colorizeMetxt(lines.join('\n'));
     }
   }
 
