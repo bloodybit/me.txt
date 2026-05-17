@@ -22,12 +22,17 @@ const {
   saveEvidencePacket,
   getEvidencePacket,
   getEvidencePackets,
+  addMonitoredSite,
+  getMonitoredSite,
+  listMonitoredSites,
+  removeMonitoredSite,
+  touchMonitoredSiteScan,
 } = require('./db');
 const { initFace, getDescriptor, getDescriptors, matchDescriptors } = require('./face');
 const { generateMeTxt, USE_TYPES } = require('./metxt');
 const { buildEvidencePacket } = require('./evidence');
 const hog = require('./hog');
-const { searchImage } = require('../image-search-lab');
+const { searchImage, searchDuckDuckGo, searchBrave } = require('../image-search-lab');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -343,6 +348,151 @@ app.patch('/api/consent', (req, res) => {
 app.get('/api/audit-log', (req, res) => {
   const profileId = req.query.profile_id || null;
   res.json(getAuditLog(profileId, parseInt(req.query.limit, 10) || 50));
+});
+
+const MONITOR_SITE_PRESETS = {
+  etsy: { label: 'Etsy', domain: 'etsy.com' },
+  ebay: { label: 'eBay', domain: 'ebay.com' },
+  amazon: { label: 'Amazon', domain: 'amazon.com' },
+  aliexpress: { label: 'AliExpress', domain: 'aliexpress.com' },
+  redbubble: { label: 'Redbubble', domain: 'redbubble.com' },
+  teepublic: { label: 'TeePublic', domain: 'teepublic.com' },
+  mercari: { label: 'Mercari', domain: 'mercari.com' },
+  depop: { label: 'Depop', domain: 'depop.com' },
+};
+
+function normalizeDomain(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) return null;
+  let cleaned = raw.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+  cleaned = cleaned.replace(/[^a-z0-9.\-]/g, '');
+  if (!cleaned || !cleaned.includes('.')) return null;
+  return cleaned;
+}
+
+app.get('/api/monitor/site-presets', (req, res) => {
+  res.json(
+    Object.entries(MONITOR_SITE_PRESETS).map(([key, preset]) => ({
+      key,
+      label: preset.label,
+      domain: preset.domain,
+    }))
+  );
+});
+
+app.get('/api/monitor/sites', (req, res) => {
+  const profileId = req.query.profile_id;
+  if (!profileId) return res.status(400).json({ error: 'profile_id is required' });
+  if (!getProfile(profileId)) return res.status(404).json({ error: 'profile not found' });
+  res.json(listMonitoredSites(profileId));
+});
+
+app.post('/api/monitor/sites', (req, res) => {
+  const body = req.body || {};
+  const profileId = String(body.profile_id || '').trim();
+  if (!profileId) return res.status(400).json({ error: 'profile_id is required' });
+
+  const profile = getProfile(profileId);
+  if (!profile) return res.status(404).json({ error: 'profile not found' });
+
+  const siteKey = String(body.site || '').trim().toLowerCase();
+  const preset = MONITOR_SITE_PRESETS[siteKey];
+
+  let site;
+  let domain;
+  if (preset) {
+    site = siteKey;
+    domain = preset.domain;
+  } else {
+    domain = normalizeDomain(body.domain || body.site);
+    if (!domain) {
+      return res.status(400).json({ error: 'site preset key or valid domain required' });
+    }
+    site = 'custom';
+  }
+
+  const keyword = String(body.keyword || profile.name || '').trim();
+  if (!keyword) {
+    return res.status(400).json({ error: 'keyword is required (defaults to profile name)' });
+  }
+
+  const existing = listMonitoredSites(profileId).find(
+    s => s.domain === domain && s.keyword.toLowerCase() === keyword.toLowerCase()
+  );
+  if (existing) {
+    return res.status(409).json({ error: 'this site/keyword pair is already monitored', site: existing });
+  }
+
+  const created = addMonitoredSite({ profileId, site, domain, keyword });
+  res.status(201).json(created);
+});
+
+app.delete('/api/monitor/sites/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(400).json({ error: 'invalid id' });
+  if (!removeMonitoredSite(id)) return res.status(404).json({ error: 'monitored site not found' });
+  res.json({ ok: true });
+});
+
+app.post('/api/monitor/scan', async (req, res) => {
+  const body = req.body || {};
+  const limit = Math.min(Math.max(parseInt(body.limit, 10) || 12, 1), 24);
+  const provider = ['ddg', 'brave'].includes(body.provider) ? body.provider : 'ddg';
+
+  let monitor;
+  if (body.site_id) {
+    monitor = getMonitoredSite(parseInt(body.site_id, 10));
+    if (!monitor) return res.status(404).json({ error: 'monitored site not found' });
+  } else {
+    const profileId = String(body.profile_id || '').trim();
+    const domain = normalizeDomain(body.domain);
+    const keyword = String(body.keyword || '').trim();
+    if (!profileId || !domain || !keyword) {
+      return res.status(400).json({ error: 'site_id, or (profile_id + domain + keyword), required' });
+    }
+    if (!getProfile(profileId)) return res.status(404).json({ error: 'profile not found' });
+    monitor = { id: null, profile_id: profileId, site: 'custom', domain, keyword };
+  }
+
+  const profile = getProfile(monitor.profile_id);
+  if (!profile) return res.status(404).json({ error: 'profile not found' });
+
+  const query = `${monitor.keyword} site:${monitor.domain}`;
+
+  try {
+    const candidates = provider === 'brave'
+      ? await searchBrave(query, limit)
+      : await searchDuckDuckGo(query, limit);
+
+    if (monitor.id) touchMonitoredSiteScan(monitor.id);
+
+    res.json({
+      site: {
+        id: monitor.id,
+        profile_id: monitor.profile_id,
+        site: monitor.site,
+        domain: monitor.domain,
+        keyword: monitor.keyword,
+      },
+      query,
+      provider,
+      profile: { id: profile.id, name: profile.name, handle: profile.handle },
+      scanned_at: new Date().toISOString(),
+      results: candidates.map(c => ({
+        rank: c.rank,
+        title: c.title,
+        pageUrl: c.pageUrl,
+        imageUrl: c.imageUrl,
+        thumbnailUrl: c.thumbnailUrl,
+        width: c.width,
+        height: c.height,
+        source: c.source,
+      })),
+    });
+  } catch (err) {
+    console.error('[monitor-scan]', err);
+    res.status(502).json({ error: err.message || 'monitor scan failed' });
+  }
 });
 
 const RESERVED_HANDLES = new Set(['api', 'app.js', 'style.css', 'index.html', 'demo-face.svg', 'test-page.html', 'favicon.ico', '.well-known']);
