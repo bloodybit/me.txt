@@ -52,8 +52,18 @@ function initDb() {
       verdict TEXT,
       packet_json TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS monitored_sites (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+      site TEXT NOT NULL,
+      domain TEXT NOT NULL,
+      keyword TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      last_scanned_at TEXT
+    );
     CREATE INDEX IF NOT EXISTS idx_audit_profile ON audit_log(profile_id, queried_at DESC);
     CREATE INDEX IF NOT EXISTS idx_evidence_profile ON evidence_packets(profile_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_monitored_profile ON monitored_sites(profile_id, created_at DESC);
   `);
   ensureHandleColumn();
   ensureAuditEvidenceColumn();
@@ -219,6 +229,32 @@ function parseEvidenceRow(row) {
   }
 }
 
+function addMonitoredSite({ profileId, site, domain, keyword }) {
+  const info = db.prepare(
+    'INSERT INTO monitored_sites (profile_id, site, domain, keyword) VALUES (?, ?, ?, ?)'
+  ).run(profileId, site, domain, keyword);
+  return getMonitoredSite(info.lastInsertRowid);
+}
+
+function getMonitoredSite(id) {
+  return db.prepare('SELECT * FROM monitored_sites WHERE id = ?').get(id);
+}
+
+function listMonitoredSites(profileId) {
+  return db.prepare(
+    'SELECT * FROM monitored_sites WHERE profile_id = ? ORDER BY created_at DESC'
+  ).all(profileId);
+}
+
+function removeMonitoredSite(id) {
+  const info = db.prepare('DELETE FROM monitored_sites WHERE id = ?').run(id);
+  return info.changes > 0;
+}
+
+function touchMonitoredSiteScan(id) {
+  db.prepare("UPDATE monitored_sites SET last_scanned_at = datetime('now') WHERE id = ?").run(id);
+}
+
 module.exports = {
   initDb,
   createProfile,
@@ -237,6 +273,11 @@ module.exports = {
   saveEvidencePacket,
   getEvidencePacket,
   getEvidencePackets,
+  addMonitoredSite,
+  getMonitoredSite,
+  listMonitoredSites,
+  removeMonitoredSite,
+  touchMonitoredSiteScan,
   slugify,
   generateUniqueHandle,
 };

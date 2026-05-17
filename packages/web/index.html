@@ -24,6 +24,7 @@
     <button class="nav-link active" data-screen-link="register">Register</button>
     <button class="nav-link" data-screen-link="scan">Scan</button>
     <button class="nav-link" data-screen-link="image-search">Image Search</button>
+    <button class="nav-link" data-screen-link="monitor">Monitor</button>
     <button class="nav-link" data-screen-link="dashboard">Dashboard</button>
     <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">
       <span class="theme-icon-dark" aria-hidden="true">&#9788;</span>
@@ -218,6 +219,48 @@
 
     <div class="image-search-status" id="image-search-status">Ready to search.</div>
     <div class="image-search-results" id="image-search-results"></div>
+  </div>
+</div>
+
+<!-- MONITOR -->
+<div id="screen-monitor" class="screen">
+  <div class="monitor-container">
+    <div class="monitor-header">
+      <h2>Merch Monitor</h2>
+      <p>Pick a registered character and watch marketplaces for unauthorized merchandise that uses their likeness</p>
+    </div>
+
+    <div class="monitor-grid">
+      <div class="monitor-panel">
+        <div class="form-section">
+          <label class="form-label" for="monitor-profile">Character</label>
+          <select class="form-input" id="monitor-profile"></select>
+          <div class="monitor-profile-meta" id="monitor-profile-meta"></div>
+        </div>
+
+        <div class="form-section">
+          <label class="form-label">Add a site to monitor</label>
+          <div class="monitor-add-row">
+            <select class="form-input" id="monitor-site-preset"></select>
+            <input class="form-input" id="monitor-custom-domain" type="text" placeholder="e.g. society6.com" style="display:none;" />
+          </div>
+          <input class="form-input monitor-keyword-input" id="monitor-keyword" type="text" placeholder="Search keyword (defaults to character name)" />
+          <button class="btn-primary monitor-add-btn" id="monitor-add-btn">Add to watchlist</button>
+          <div class="form-error" id="monitor-add-error" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div class="monitor-panel monitor-list-panel">
+        <div class="monitor-section-title">Watchlist</div>
+        <div class="monitor-list" id="monitor-list">
+          <div class="audit-empty">Select a character to see monitored sites.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="monitor-section-title monitor-results-title" id="monitor-results-title" style="display:none;"></div>
+    <div class="monitor-status" id="monitor-status"></div>
+    <div class="monitor-results" id="monitor-results"></div>
   </div>
 </div>
 

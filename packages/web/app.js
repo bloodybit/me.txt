@@ -18,6 +18,7 @@
     const navBtn = document.querySelector('.nav-link[data-screen-link="' + name + '"]');
     if (navBtn) navBtn.classList.add('active');
     if (name === 'dashboard') refreshDashboard();
+    if (name === 'monitor') refreshMonitor();
   }
 
   document.querySelectorAll('[data-screen-link]').forEach(el => {
@@ -650,6 +651,343 @@
         '</div>';
       resultsEl.appendChild(item);
     });
+  }
+
+  // ---------- Monitor ----------
+  let monitorPresets = [];
+  let monitorProfiles = [];
+  let monitorSelectedProfile = null;
+
+  const monitorProfileSelect = document.getElementById('monitor-profile');
+  const monitorPresetSelect = document.getElementById('monitor-site-preset');
+  const monitorCustomDomain = document.getElementById('monitor-custom-domain');
+  const monitorKeywordInput = document.getElementById('monitor-keyword');
+  const monitorAddBtn = document.getElementById('monitor-add-btn');
+  const monitorAddError = document.getElementById('monitor-add-error');
+  const monitorListEl = document.getElementById('monitor-list');
+  const monitorProfileMeta = document.getElementById('monitor-profile-meta');
+  const monitorStatusEl = document.getElementById('monitor-status');
+  const monitorResultsEl = document.getElementById('monitor-results');
+  const monitorResultsTitle = document.getElementById('monitor-results-title');
+
+  function setMonitorError(message) {
+    if (!monitorAddError) return;
+    if (!message) {
+      monitorAddError.style.display = 'none';
+      monitorAddError.textContent = '';
+      return;
+    }
+    monitorAddError.textContent = message;
+    monitorAddError.style.display = 'block';
+  }
+
+  function setMonitorStatus(message) {
+    if (monitorStatusEl) monitorStatusEl.textContent = message || '';
+  }
+
+  function clearMonitorResults() {
+    if (monitorResultsEl) monitorResultsEl.innerHTML = '';
+    if (monitorResultsTitle) {
+      monitorResultsTitle.style.display = 'none';
+      monitorResultsTitle.textContent = '';
+    }
+    setMonitorStatus('');
+  }
+
+  async function initMonitorPresets() {
+    if (monitorPresets.length || !monitorPresetSelect) return;
+    try {
+      const resp = await fetch('/api/monitor/site-presets');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      monitorPresets = await resp.json();
+    } catch (err) {
+      monitorPresets = [];
+    }
+    monitorPresetSelect.innerHTML = '';
+    monitorPresets.forEach(preset => {
+      const opt = document.createElement('option');
+      opt.value = preset.key;
+      opt.textContent = preset.label + ' (' + preset.domain + ')';
+      monitorPresetSelect.appendChild(opt);
+    });
+    const customOpt = document.createElement('option');
+    customOpt.value = '__custom';
+    customOpt.textContent = 'Custom domain…';
+    monitorPresetSelect.appendChild(customOpt);
+  }
+
+  if (monitorPresetSelect && monitorCustomDomain) {
+    monitorPresetSelect.addEventListener('change', () => {
+      monitorCustomDomain.style.display = monitorPresetSelect.value === '__custom' ? 'block' : 'none';
+      setMonitorError('');
+    });
+  }
+
+  async function loadMonitorProfiles() {
+    if (!monitorProfileSelect) return;
+    try {
+      const resp = await fetch('/api/profiles');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      monitorProfiles = await resp.json();
+    } catch (err) {
+      monitorProfiles = [];
+    }
+    monitorProfileSelect.innerHTML = '';
+    if (!monitorProfiles.length) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'No registered characters yet';
+      monitorProfileSelect.appendChild(opt);
+      monitorSelectedProfile = null;
+      renderMonitorMeta(null);
+      renderMonitorList([]);
+      return;
+    }
+    monitorProfiles.forEach(profile => {
+      const opt = document.createElement('option');
+      opt.value = profile.id;
+      opt.textContent = profile.name + ' (' + profile.id + ')';
+      monitorProfileSelect.appendChild(opt);
+    });
+    const preferred =
+      monitorProfiles.find(p => p.id === activeProfileId) || monitorProfiles[0];
+    monitorProfileSelect.value = preferred.id;
+    await selectMonitorProfile(preferred.id);
+  }
+
+  async function selectMonitorProfile(profileId) {
+    monitorSelectedProfile = monitorProfiles.find(p => p.id === profileId) || null;
+    renderMonitorMeta(monitorSelectedProfile);
+    clearMonitorResults();
+    setMonitorError('');
+    if (monitorKeywordInput && monitorSelectedProfile) {
+      monitorKeywordInput.placeholder =
+        'Search keyword (default: "' + monitorSelectedProfile.name + '")';
+      monitorKeywordInput.value = '';
+    }
+    if (!monitorSelectedProfile) {
+      renderMonitorList([]);
+      return;
+    }
+    await refreshMonitorList();
+  }
+
+  if (monitorProfileSelect) {
+    monitorProfileSelect.addEventListener('change', () => {
+      selectMonitorProfile(monitorProfileSelect.value);
+    });
+  }
+
+  function renderMonitorMeta(profile) {
+    if (!monitorProfileMeta) return;
+    if (!profile) {
+      monitorProfileMeta.textContent = 'Register a character first to start monitoring.';
+      return;
+    }
+    monitorProfileMeta.textContent =
+      profile.handle ? '/' + profile.handle + ' · ' + profile.id : profile.id;
+  }
+
+  async function refreshMonitorList() {
+    if (!monitorSelectedProfile) {
+      renderMonitorList([]);
+      return;
+    }
+    try {
+      const resp = await fetch(
+        '/api/monitor/sites?profile_id=' + encodeURIComponent(monitorSelectedProfile.id)
+      );
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      renderMonitorList(await resp.json());
+    } catch (err) {
+      renderMonitorList([]);
+    }
+  }
+
+  function renderMonitorList(entries) {
+    if (!monitorListEl) return;
+    if (!entries || !entries.length) {
+      monitorListEl.innerHTML = monitorSelectedProfile
+        ? '<div class="audit-empty">No sites yet. Add Etsy, eBay, or any marketplace to watch for unauthorized merch.</div>'
+        : '<div class="audit-empty">Select a character to see monitored sites.</div>';
+      return;
+    }
+    monitorListEl.innerHTML = '';
+    entries.forEach(entry => {
+      const item = document.createElement('div');
+      item.className = 'monitor-item';
+      const presetLabel = monitorPresets.find(p => p.key === entry.site);
+      const label = presetLabel ? presetLabel.label : entry.domain;
+      const lastScanned = entry.last_scanned_at
+        ? 'Last scanned ' + formatDate(entry.last_scanned_at)
+        : 'Never scanned';
+      item.innerHTML =
+        '<div class="monitor-item-body">' +
+          '<div class="monitor-item-title">' + esc(label) + ' · "' + esc(entry.keyword) + '"</div>' +
+          '<div class="monitor-item-meta">' + esc(entry.domain) + ' · ' + esc(lastScanned) + '</div>' +
+        '</div>' +
+        '<div class="monitor-item-actions">' +
+          '<button class="monitor-scan-btn" data-monitor-scan="' + esc(entry.id) + '">Scan</button>' +
+          '<button class="monitor-remove-btn" data-monitor-remove="' + esc(entry.id) + '">Remove</button>' +
+        '</div>';
+      monitorListEl.appendChild(item);
+    });
+    monitorListEl.querySelectorAll('[data-monitor-scan]').forEach(btn => {
+      btn.addEventListener('click', () => runMonitorScan(parseInt(btn.dataset.monitorScan, 10), btn));
+    });
+    monitorListEl.querySelectorAll('[data-monitor-remove]').forEach(btn => {
+      btn.addEventListener('click', () => removeMonitorSite(parseInt(btn.dataset.monitorRemove, 10)));
+    });
+  }
+
+  async function addMonitorSite() {
+    setMonitorError('');
+    if (!monitorSelectedProfile) {
+      setMonitorError('Select a registered character first.');
+      return;
+    }
+    const presetKey = monitorPresetSelect ? monitorPresetSelect.value : '';
+    const payload = { profile_id: monitorSelectedProfile.id };
+    if (presetKey === '__custom') {
+      const domain = monitorCustomDomain.value.trim();
+      if (!domain) {
+        setMonitorError('Enter a domain to monitor (e.g., society6.com).');
+        return;
+      }
+      payload.domain = domain;
+    } else {
+      payload.site = presetKey;
+    }
+    const keyword = monitorKeywordInput.value.trim();
+    if (keyword) payload.keyword = keyword;
+
+    monitorAddBtn.disabled = true;
+    monitorAddBtn.textContent = 'Adding…';
+    try {
+      const resp = await fetch('/api/monitor/sites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || 'HTTP ' + resp.status);
+      monitorKeywordInput.value = '';
+      monitorCustomDomain.value = '';
+      await refreshMonitorList();
+    } catch (err) {
+      setMonitorError(err.message || 'Failed to add site.');
+    } finally {
+      monitorAddBtn.disabled = false;
+      monitorAddBtn.textContent = 'Add to watchlist';
+    }
+  }
+
+  if (monitorAddBtn) {
+    monitorAddBtn.addEventListener('click', addMonitorSite);
+  }
+
+  async function removeMonitorSite(id) {
+    if (!id) return;
+    try {
+      const resp = await fetch('/api/monitor/sites/' + id, { method: 'DELETE' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      await refreshMonitorList();
+    } catch (err) {
+      console.warn('[monitor] remove failed', err);
+    }
+  }
+
+  async function runMonitorScan(siteId, triggerBtn) {
+    if (!siteId) return;
+    if (triggerBtn) {
+      triggerBtn.disabled = true;
+      triggerBtn.textContent = 'Scanning…';
+    }
+    setMonitorStatus('Searching marketplace for matches…');
+    if (monitorResultsEl) monitorResultsEl.innerHTML = '';
+    try {
+      const resp = await fetch('/api/monitor/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ site_id: siteId, limit: 16 }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error || 'HTTP ' + resp.status);
+      renderMonitorScan(data);
+      await refreshMonitorList();
+    } catch (err) {
+      setMonitorStatus('Scan failed: ' + (err.message || 'unknown error'));
+    } finally {
+      if (triggerBtn) {
+        triggerBtn.disabled = false;
+        triggerBtn.textContent = 'Scan';
+      }
+    }
+  }
+
+  function renderMonitorScan(data) {
+    if (!monitorResultsEl) return;
+    const results = (data && data.results) || [];
+    if (monitorResultsTitle) {
+      monitorResultsTitle.style.display = 'block';
+      monitorResultsTitle.textContent =
+        'Findings on ' + (data.site && data.site.domain ? data.site.domain : 'site') +
+        ' for "' + (data.site && data.site.keyword ? data.site.keyword : '') + '"';
+    }
+    const methodLabel = data && data.method ? describeScanMethod(data.method, data.fallback_reason) : '';
+    const validation = data && data.validation;
+    const removedDead = validation && validation.removed_dead ? validation.removed_dead : 0;
+    const deadLabel = removedDead
+      ? '  ·  Filtered out ' + removedDead + ' dead listing(s).'
+      : '';
+    setMonitorStatus(
+      (results.length
+        ? 'Found ' + results.length + ' candidate listing(s). Review for unauthorized likeness use.'
+        : 'No public listings detected on this site for this keyword right now.') +
+      (methodLabel ? '  ·  ' + methodLabel : '') +
+      deadLabel
+    );
+    monitorResultsEl.innerHTML = '';
+    results.forEach(result => {
+      const thumb = result.thumbnailUrl || result.imageUrl;
+      const pageUrl = result.pageUrl || result.imageUrl || '#';
+      const card = document.createElement('div');
+      card.className = 'monitor-card';
+      card.innerHTML =
+        '<div class="monitor-card-thumb">' +
+          (thumb ? '<img src="' + esc(thumb) + '" alt="" loading="lazy" />' : '<span>No image</span>') +
+        '</div>' +
+        '<div class="monitor-card-body">' +
+          '<div class="monitor-card-title">' + esc(result.title || 'Untitled listing') + '</div>' +
+          '<div class="monitor-card-url">' + esc(formatSource(pageUrl)) + '</div>' +
+          '<div class="monitor-card-actions">' +
+            '<a href="' + esc(pageUrl) + '" target="_blank" rel="noopener">Open listing</a>' +
+            (result.imageUrl ? '<a href="' + esc(result.imageUrl) + '" target="_blank" rel="noopener">Open image</a>' : '') +
+          '</div>' +
+        '</div>';
+      monitorResultsEl.appendChild(card);
+    });
+  }
+
+  function describeScanMethod(method, fallbackReason) {
+    if (!method) return '';
+    if (method === 'etsy-api') {
+      return 'Live results via Etsy Open API.';
+    }
+    if (method.startsWith('puppeteer:')) {
+      return 'Live scrape via headless Chrome (' + method.slice('puppeteer:'.length) + ').';
+    }
+    if (method.endsWith('-fallback')) {
+      const base = method.replace('-fallback', '');
+      const reason = fallbackReason ? ' Reason: ' + fallbackReason : '';
+      return 'Direct marketplace lookup unavailable; fell back to ' + base.toUpperCase() + ' index search.' + reason;
+    }
+    return 'Source: ' + method.toUpperCase() + ' index search.';
+  }
+
+  async function refreshMonitor() {
+    await initMonitorPresets();
+    await loadMonitorProfiles();
   }
 
   // ---------- Init ----------
