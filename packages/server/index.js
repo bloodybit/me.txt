@@ -375,6 +375,7 @@ app.get('/api/audit-log', (req, res) => {
 });
 
 const MONITOR_SITE_PRESETS = {
+  x: { label: 'X (Twitter)', domain: 'x.com' },
   etsy: { label: 'Etsy', domain: 'etsy.com' },
   ebay: { label: 'eBay', domain: 'ebay.com' },
   amazon: { label: 'Amazon', domain: 'amazon.com' },
@@ -536,16 +537,26 @@ app.post('/api/monitor/scan', async (req, res) => {
     validation: { checked: validatedTotal, removed_dead: validatedDead },
     profile: { id: profile.id, name: profile.name, handle: profile.handle },
     scanned_at: new Date().toISOString(),
-    results: candidates.map(c => ({
-      rank: c.rank,
-      title: c.title,
-      pageUrl: c.pageUrl,
-      imageUrl: c.imageUrl,
-      thumbnailUrl: c.thumbnailUrl,
-      width: c.width,
-      height: c.height,
-      source: c.source,
-    })),
+    results: candidates.map(c => {
+      const base = {
+        rank: c.rank,
+        title: c.title,
+        pageUrl: c.pageUrl,
+        imageUrl: c.imageUrl,
+        thumbnailUrl: c.thumbnailUrl,
+        width: c.width,
+        height: c.height,
+        source: c.source,
+      };
+      if (c.source === 'x') {
+        base.tweetId = c.tweetId || null;
+        base.createdAt = c.createdAt || null;
+        base.author = c.author || null;
+        base.metrics = c.metrics || null;
+        base.images = c.images || [];
+      }
+      return base;
+    }),
   });
 });
 
