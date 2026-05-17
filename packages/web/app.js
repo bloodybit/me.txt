@@ -705,23 +705,25 @@
     filtered.forEach(profile => {
       const initials = profile.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
       const photoUrl = '/api/profile/' + encodeURIComponent(profile.id) + '/photo';
+      const metxtPath = profile.handle ? '/' + profile.handle + '/me.txt' : '/me.txt';
       const card = document.createElement('div');
       card.className = 'browse-card';
       card.innerHTML =
-        '<div class="browse-card-top">' +
+        '<div class="browse-card-sidebar">' +
           '<div class="browse-card-avatar" data-browse-avatar="' + esc(profile.id) + '">' +
             '<img src="' + esc(photoUrl) + '" alt="" />' +
             '<span class="browse-card-avatar-fallback">' + esc(initials) + '</span>' +
           '</div>' +
-          '<div class="browse-card-info">' +
-            '<div class="browse-card-name">' + esc(profile.name) + '</div>' +
-            '<div class="browse-card-handle">' + esc(profile.handle ? '/' + profile.handle : profile.id) + '</div>' +
-          '</div>' +
+          '<div class="browse-card-name">' + esc(profile.name) + '</div>' +
+          '<div class="browse-card-handle">' + esc(profile.handle ? '/' + profile.handle : profile.id) + '</div>' +
           '<div class="browse-card-date">' + esc(formatDate(profile.created_at)) + '</div>' +
+          '<div class="browse-card-consent" data-browse-consent="' + esc(profile.id) + '"></div>' +
         '</div>' +
-        '<div class="browse-card-consent" data-browse-consent="' + esc(profile.id) + '"></div>' +
-        '<div class="browse-card-metxt-section">' +
-          '<div class="browse-card-metxt-label">me.txt</div>' +
+        '<div class="browse-card-main">' +
+          '<div class="browse-card-metxt-header">' +
+            '<span class="browse-card-metxt-path">' + esc(metxtPath) + '</span>' +
+            '<span class="browse-card-metxt-version">v0.1</span>' +
+          '</div>' +
           '<div class="browse-card-metxt" data-browse-metxt="' + esc(profile.id) + '"></div>' +
         '</div>';
       browseGrid.appendChild(card);
