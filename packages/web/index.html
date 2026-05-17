@@ -19,9 +19,9 @@
 <body>
 
 <nav class="nav">
-  <div class="nav-logo" data-screen-link="register">me<span>.txt</span></div>
+  <div class="nav-logo" data-screen-link="landing">me<span>.txt</span></div>
   <div class="nav-links">
-    <button class="nav-link active" data-screen-link="register">Register</button>
+    <button class="nav-link" data-screen-link="register">Register</button>
     <button class="nav-link" data-screen-link="scan">Scan</button>
     <button class="nav-link" data-screen-link="image-search">Image Search</button>
     <button class="nav-link" data-screen-link="monitor">Monitor</button>
@@ -33,8 +33,143 @@
   </div>
 </nav>
 
+<!-- LANDING -->
+<div id="screen-landing" class="screen active">
+  <div class="landing">
+
+    <section class="landing-hero">
+      <h1 class="landing-title">me<span>.txt</span></h1>
+      <p class="landing-subtitle">The consent layer for your face</p>
+      <p class="landing-desc">Like <code>robots.txt</code> tells crawlers what they can index, <code>me.txt</code> tells the world what they can do with your likeness. Register once, enforce everywhere.</p>
+      <div class="landing-cta">
+        <button class="btn-primary landing-btn" data-screen-link="register">Register Your Likeness</button>
+      </div>
+    </section>
+
+    <section class="landing-section">
+      <h2 class="landing-section-title">Why me.txt?</h2>
+      <div class="landing-cards">
+        <div class="landing-card">
+          <div class="landing-card-icon">&#128274;</div>
+          <h3>You Own Your Face</h3>
+          <p>Your likeness is being used to train AI models, sell merchandise, and generate deepfakes &mdash; all without your permission. me.txt lets you declare exactly what is and isn't allowed.</p>
+        </div>
+        <div class="landing-card">
+          <div class="landing-card-icon">&#128196;</div>
+          <h3>An Open Standard</h3>
+          <p>me.txt is a simple, machine-readable text file anyone can serve. No walled gardens, no vendor lock-in. Platforms, AI pipelines, and content tools can all check a single endpoint for consent.</p>
+        </div>
+        <div class="landing-card">
+          <div class="landing-card-icon">&#9878;</div>
+          <h3>Enforcement-Ready</h3>
+          <p>Every match generates an evidence packet with confidence scores, source URLs, and timestamps &mdash; ready for a DMCA takedown, a legal letter, or an automated cease-and-desist workflow.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-section">
+      <h2 class="landing-section-title">How It Works</h2>
+      <div class="landing-steps">
+        <div class="landing-step">
+          <div class="landing-step-num">1</div>
+          <div>
+            <h3>Register</h3>
+            <p>Upload a few reference photos and set your consent rules &mdash; allow editorial, deny commercial, block AI training. Whatever you want.</p>
+          </div>
+        </div>
+        <div class="landing-step">
+          <div class="landing-step-num">2</div>
+          <div>
+            <h3>Publish</h3>
+            <p>Your profile gets a unique <code>me.txt</code> file at a public URL. Anyone can query it to check your permissions before using your likeness.</p>
+          </div>
+        </div>
+        <div class="landing-step">
+          <div class="landing-step-num">3</div>
+          <div>
+            <h3>Detect</h3>
+            <p>Our scanner uses face recognition to find your likeness on web pages. When it finds a match, it checks your consent rules and flags violations.</p>
+          </div>
+        </div>
+        <div class="landing-step">
+          <div class="landing-step-num">4</div>
+          <div>
+            <h3>Enforce</h3>
+            <p>Violations generate signed evidence packets you can send to platforms, legal teams, or automated takedown APIs.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-section">
+      <h2 class="landing-section-title">What a me.txt File Looks Like</h2>
+      <div class="landing-metxt-example">
+        <div class="landing-metxt-header">
+          <span class="landing-metxt-path">/sarah-chen/me.txt</span>
+          <span class="landing-metxt-ver">v0.1</span>
+        </div>
+        <pre class="landing-metxt-body"># me.txt v0.1
+# Human Likeness Consent Registry
+
+Identity: Sarah Chen
+ID: me_a3f19b2
+
+Likeness-Face: registered
+Likeness-Voice: not-registered
+
+Default-Permission: deny
+
+Allow: editorial
+Deny: commercial
+Deny: ai-training
+Allow: satire
+
+Match-Endpoint: https://metxt.example.com/api/match
+Evidence-Endpoint: https://metxt.example.com/api/evidence
+Profile: https://metxt.example.com/api/profile/me_a3f19b2
+Self: https://metxt.example.com/sarah-chen/me.txt
+
+Updated: 2026-05-17T12:00:00.000Z</pre>
+      </div>
+    </section>
+
+    <section class="landing-section">
+      <h2 class="landing-section-title">Real-World Scenarios</h2>
+      <div class="landing-scenarios">
+        <div class="landing-scenario">
+          <div class="landing-scenario-label landing-scenario-blocked">BLOCKED</div>
+          <h3>AI Training Dataset</h3>
+          <p>A startup scrapes public photos to train a face-generation model. Their pipeline hits the <code>/api/match</code> endpoint, discovers your <code>Deny: ai-training</code> rule, and automatically excludes your images from the training set.</p>
+        </div>
+        <div class="landing-scenario">
+          <div class="landing-scenario-label landing-scenario-allowed">ALLOWED</div>
+          <h3>News Article</h3>
+          <p>A journalist uses your photo in a story about a public event. Their CMS checks your me.txt and sees <code>Allow: editorial</code>. The photo runs with proper attribution &mdash; no conflict, no takedown.</p>
+        </div>
+        <div class="landing-scenario">
+          <div class="landing-scenario-label landing-scenario-blocked">BLOCKED</div>
+          <h3>Unauthorized Merch</h3>
+          <p>Someone prints your face on t-shirts and lists them on Etsy. The Merch Monitor catches it, generates an evidence packet with a 96% confidence match, and you file a takedown the same day.</p>
+        </div>
+        <div class="landing-scenario">
+          <div class="landing-scenario-label landing-scenario-allowed">ALLOWED</div>
+          <h3>Parody &amp; Satire</h3>
+          <p>A comedian uses a caricature of you in a sketch. Your <code>Allow: satire</code> rule signals that this use is fine. Both parties have clarity without a conversation.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-section landing-final">
+      <h2 class="landing-section-title">Your Face, Your Rules</h2>
+      <p class="landing-final-desc">Registration takes under a minute. Upload your photos, set your consent rules, and get a machine-readable me.txt file that speaks for you when you're not in the room.</p>
+      <button class="btn-primary landing-btn" data-screen-link="register">Get Started</button>
+    </section>
+
+  </div>
+</div>
+
 <!-- REGISTER -->
-<div id="screen-register" class="screen active" data-decision="5">
+<div id="screen-register" class="screen" data-decision="5">
   <div class="register-container">
     <div id="register-form">
       <div class="register-header">

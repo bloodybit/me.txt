@@ -997,6 +997,7 @@
   } else if (activeProfileId) {
     refreshDashboard();
   } else {
+    showScreen('landing');
     renderDashMetxtEmpty();
     refreshHogStatus();
   }
