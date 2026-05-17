@@ -972,6 +972,7 @@
         '<div class="monitor-item-body">' +
           '<div class="monitor-item-title">' + esc(label) + ' · "' + esc(entry.keyword) + '"</div>' +
           '<div class="monitor-item-meta">' + esc(entry.domain) + ' · ' + esc(lastScanned) + '</div>' +
+          (entry.site === 'x' ? '<span class="monitor-item-provider">datahog.ai</span>' : '') +
         '</div>' +
         '<div class="monitor-item-actions">' +
           '<button class="monitor-scan-btn" data-monitor-scan="' + esc(entry.id) + '">Scan</button>' +

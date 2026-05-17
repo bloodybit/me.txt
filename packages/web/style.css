@@ -1183,6 +1183,18 @@ body {
   font-size: 13px;
   font-weight: 600;
 }
+.monitor-item-provider {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 7px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--accent-blue);
+  background: rgba(100, 181, 246, 0.12);
+  border: 1px solid rgba(100, 181, 246, 0.25);
+  border-radius: 4px;
+}
 .monitor-item-meta {
   color: var(--text-muted);
   font-size: 10px;
