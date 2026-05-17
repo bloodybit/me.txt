@@ -19,6 +19,7 @@
     if (navBtn) navBtn.classList.add('active');
     if (name === 'dashboard') refreshDashboard();
     if (name === 'monitor') refreshMonitor();
+    if (name === 'browse') refreshBrowse();
   }
 
   document.querySelectorAll('[data-screen-link]').forEach(el => {
@@ -651,6 +652,146 @@
         '</div>';
       resultsEl.appendChild(item);
     });
+  }
+
+  // ---------- Browse ----------
+  let browseProfiles = [];
+  let browseDetails = {};
+  const browseSearchInput = document.getElementById('browse-search');
+  const browseGrid = document.getElementById('browse-grid');
+  const browseCount = document.getElementById('browse-count');
+
+  if (browseSearchInput) {
+    browseSearchInput.addEventListener('input', () => renderBrowseGrid(browseSearchInput.value.trim()));
+  }
+
+  async function refreshBrowse() {
+    if (!browseGrid) return;
+    try {
+      const resp = await fetch('/api/profiles');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      browseProfiles = await resp.json();
+    } catch (err) {
+      browseProfiles = [];
+    }
+    browseDetails = {};
+    renderBrowseGrid(browseSearchInput ? browseSearchInput.value.trim() : '');
+  }
+
+  function renderBrowseGrid(query) {
+    if (!browseGrid) return;
+    const q = query.toLowerCase();
+    const filtered = q
+      ? browseProfiles.filter(p =>
+          p.name.toLowerCase().includes(q) ||
+          (p.handle && p.handle.toLowerCase().includes(q)) ||
+          p.id.toLowerCase().includes(q)
+        )
+      : browseProfiles;
+
+    if (browseCount) {
+      browseCount.textContent = filtered.length + ' character' + (filtered.length !== 1 ? 's' : '') +
+        (q ? ' matching "' + query + '"' : ' registered');
+    }
+
+    if (!filtered.length) {
+      browseGrid.innerHTML = '<div class="audit-empty">' +
+        (q ? 'No characters match your search.' : 'No characters registered yet. Register one to see it here.') +
+        '</div>';
+      return;
+    }
+
+    browseGrid.innerHTML = '';
+    filtered.forEach(profile => {
+      const initials = profile.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      const card = document.createElement('div');
+      card.className = 'browse-card';
+      card.innerHTML =
+        '<div class="browse-card-top">' +
+          '<div class="browse-card-avatar">' + esc(initials) + '</div>' +
+          '<div class="browse-card-info">' +
+            '<div class="browse-card-name">' + esc(profile.name) + '</div>' +
+            '<div class="browse-card-handle">' + esc(profile.handle ? '/' + profile.handle : profile.id) + '</div>' +
+          '</div>' +
+          '<div class="browse-card-date">' + esc(formatDate(profile.created_at)) + '</div>' +
+        '</div>' +
+        '<div class="browse-card-consent" data-browse-consent="' + esc(profile.id) + '"></div>' +
+        '<div class="browse-card-metxt" data-browse-metxt="' + esc(profile.id) + '" style="display:none;"></div>' +
+        '<button class="browse-card-metxt-toggle" data-browse-toggle="' + esc(profile.id) + '">Show me.txt</button>';
+      browseGrid.appendChild(card);
+
+      loadBrowseDetail(profile.id);
+    });
+  }
+
+  async function loadBrowseDetail(profileId) {
+    if (browseDetails[profileId]) {
+      applyBrowseDetail(profileId, browseDetails[profileId]);
+      return;
+    }
+    try {
+      const resp = await fetch('/api/profile/' + encodeURIComponent(profileId));
+      if (!resp.ok) return;
+      const data = await resp.json();
+      browseDetails[profileId] = data;
+      applyBrowseDetail(profileId, data);
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  function applyBrowseDetail(profileId, data) {
+    var consentEl = document.querySelector('[data-browse-consent="' + profileId + '"]');
+    if (consentEl && data.consent) {
+      consentEl.innerHTML = data.consent.map(function (r) {
+        var label = r.use_type.replace(/_/g, ' ');
+        label = label.charAt(0).toUpperCase() + label.slice(1);
+        var cls = r.permission === 'allow' ? 'allow' : 'deny';
+        return '<span class="browse-consent-tag ' + cls + '">' + esc(label) + ': ' + esc(r.permission) + '</span>';
+      }).join('');
+    }
+
+    var toggleBtn = document.querySelector('[data-browse-toggle="' + profileId + '"]');
+    var metxtEl = document.querySelector('[data-browse-metxt="' + profileId + '"]');
+    if (toggleBtn && metxtEl) {
+      toggleBtn.addEventListener('click', function () {
+        var showing = metxtEl.style.display !== 'none';
+        metxtEl.style.display = showing ? 'none' : 'block';
+        toggleBtn.textContent = showing ? 'Show me.txt' : 'Hide me.txt';
+        if (!showing && !metxtEl.innerHTML) {
+          var profile = data.profile;
+          var rules = data.consent || [];
+          var ruleMap = {};
+          rules.forEach(function (r) { ruleMap[r.use_type] = r.permission; });
+          var lines = [
+            '# me.txt v0.1',
+            '# Human Likeness Consent Registry',
+            '',
+            'Identity: ' + profile.name,
+            'ID: ' + profile.id,
+            '',
+            'Likeness-Face: registered',
+            'Likeness-Voice: not-registered',
+            '',
+            'Default-Permission: deny',
+            '',
+          ];
+          USE_TYPES.forEach(function (useType) {
+            var permission = ruleMap[useType] || 'deny';
+            var directive = permission === 'allow' ? 'Allow' : 'Deny';
+            lines.push(directive + ': ' + useType.replace(/_/g, '-'));
+          });
+          lines.push('');
+          lines.push('Match-Endpoint: ' + location.origin + '/api/match');
+          lines.push('Evidence-Endpoint: ' + location.origin + '/api/evidence');
+          lines.push('Profile: ' + location.origin + '/api/profile/' + profile.id);
+          if (profile.handle) {
+            lines.push('Self: ' + location.origin + '/' + profile.handle + '/me.txt');
+          }
+          metxtEl.innerHTML = colorizeMetxt(lines.join('\n'));
+        }
+      });
+    }
   }
 
   // ---------- Monitor ----------
