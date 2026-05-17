@@ -103,12 +103,18 @@
 
     <section class="landing-section">
       <h2 class="landing-section-title">What a me.txt File Looks Like</h2>
-      <div class="landing-metxt-example">
-        <div class="landing-metxt-header">
-          <span class="landing-metxt-path">/sarah-chen/me.txt</span>
-          <span class="landing-metxt-ver">v0.1</span>
-        </div>
-        <pre class="landing-metxt-body"># me.txt v0.1
+      <div class="landing-split">
+
+        <div class="landing-split-pane">
+          <div class="landing-split-tab">
+            <span class="landing-split-dot"></span> Source
+          </div>
+          <div class="landing-metxt-example">
+            <div class="landing-metxt-header">
+              <span class="landing-metxt-path">/sarah-chen/me.txt</span>
+              <span class="landing-metxt-ver">v0.1</span>
+            </div>
+            <pre class="landing-metxt-body"># me.txt v0.1
 # Human Likeness Consent Registry
 
 Identity: Sarah Chen
@@ -124,12 +130,85 @@ Deny: commercial
 Deny: ai-training
 Allow: satire
 
-Match-Endpoint: https://metxt.example.com/api/match
-Evidence-Endpoint: https://metxt.example.com/api/evidence
-Profile: https://metxt.example.com/api/profile/me_a3f19b2
-Self: https://metxt.example.com/sarah-chen/me.txt
+Match-Endpoint: /api/match
+Evidence-Endpoint: /api/evidence
+Profile: /api/profile/me_a3f19b2
+Self: /sarah-chen/me.txt
 
 Updated: 2026-05-17T12:00:00.000Z</pre>
+          </div>
+        </div>
+
+        <div class="landing-split-pane">
+          <div class="landing-split-tab">
+            <span class="landing-split-dot landing-split-dot-preview"></span> Preview
+          </div>
+          <div class="landing-preview">
+            <div class="landing-preview-identity">
+              <div class="landing-preview-avatar">SC</div>
+              <div>
+                <div class="landing-preview-name">Sarah Chen</div>
+                <div class="landing-preview-id">me_a3f19b2</div>
+              </div>
+            </div>
+
+            <div class="landing-preview-group">
+              <div class="landing-preview-group-title">Likeness</div>
+              <div class="landing-preview-row">
+                <span>Face</span>
+                <span class="landing-preview-badge landing-preview-badge-on">Registered</span>
+              </div>
+              <div class="landing-preview-row">
+                <span>Voice</span>
+                <span class="landing-preview-badge landing-preview-badge-off">Not registered</span>
+              </div>
+            </div>
+
+            <div class="landing-preview-group">
+              <div class="landing-preview-group-title">Consent Rules</div>
+              <div class="landing-preview-row">
+                <span>Default</span>
+                <span class="landing-preview-badge landing-preview-badge-deny">Deny</span>
+              </div>
+              <div class="landing-preview-divider"></div>
+              <div class="landing-preview-row">
+                <span>Editorial</span>
+                <span class="landing-preview-badge landing-preview-badge-allow">Allow</span>
+              </div>
+              <div class="landing-preview-row">
+                <span>Commercial</span>
+                <span class="landing-preview-badge landing-preview-badge-deny">Deny</span>
+              </div>
+              <div class="landing-preview-row">
+                <span>AI Training</span>
+                <span class="landing-preview-badge landing-preview-badge-deny">Deny</span>
+              </div>
+              <div class="landing-preview-row">
+                <span>Satire</span>
+                <span class="landing-preview-badge landing-preview-badge-allow">Allow</span>
+              </div>
+            </div>
+
+            <div class="landing-preview-group">
+              <div class="landing-preview-group-title">Endpoints</div>
+              <div class="landing-preview-endpoint">
+                <span class="landing-preview-endpoint-label">Match</span>
+                <code>/api/match</code>
+              </div>
+              <div class="landing-preview-endpoint">
+                <span class="landing-preview-endpoint-label">Evidence</span>
+                <code>/api/evidence</code>
+              </div>
+              <div class="landing-preview-endpoint">
+                <span class="landing-preview-endpoint-label">Profile</span>
+                <code>/api/profile/me_a3f19b2</code>
+              </div>
+            </div>
+
+            <div class="landing-preview-updated">Last updated May 17, 2026</div>
+          </div>
+        </div>
+
       </div>
     </section>
 
