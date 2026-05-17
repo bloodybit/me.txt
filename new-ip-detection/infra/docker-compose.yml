@@ -34,6 +34,19 @@ services:
       timeout: 3s
       retries: 20
 
+  migrate:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/ipdetection
+    depends_on:
+      postgres:
+        condition: service_healthy
+    working_dir: /app
+    command: ["bun", "run", "scripts/migrate.ts", "up"]
+    restart: "no"
+
   api:
     build:
       context: ..
@@ -53,6 +66,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "8080:8080"
     volumes:
@@ -71,7 +86,10 @@ services:
       EMBEDDING_MODEL: fake-deterministic
       EMBEDDING_DIM: 768
     depends_on:
-      - api
+      api:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
     volumes:
       - ../apps/worker:/app
 

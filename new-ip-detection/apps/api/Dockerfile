@@ -14,6 +14,10 @@ RUN bun install --frozen-lockfile || bun install
 COPY apps/api ./apps/api
 COPY packages/contracts ./packages/contracts
 COPY tsconfig.json ./
+# Migration runner + SQL files; the `migrate` compose service runs these
+# before the API starts.
+COPY scripts ./scripts
+COPY infra/migrations ./infra/migrations
 
 WORKDIR /app/apps/api
 

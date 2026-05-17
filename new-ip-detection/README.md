@@ -14,13 +14,23 @@ Visual IP/trademark detection service. Register subjects, upload reference image
 ```bash
 cp .env.example .env
 docker compose -f infra/docker-compose.yml up --build
-# in another shell:
+# in another shell, once the API is up:
 bun install
-bun run migrate:up
 bun run seed
 ```
 
-The API is then available on `http://localhost:8080`. MinIO console at `http://localhost:9001` (user/pass `minio`/`miniominio`).
+Compose runs a one-shot `migrate` service before the API and worker boot, so
+the schema is in place by the time anything starts polling. The API is then
+available on `http://localhost:8080`. MinIO console at `http://localhost:9001`
+(user/pass `minio`/`miniominio`).
+
+If you want to run migrations from the host instead (e.g. against a manually
+started Postgres):
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/ipdetection \
+  bun run migrate:up
+```
 
 ## Layout
 
