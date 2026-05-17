@@ -1,0 +1,28 @@
+{
+  "name": "ip-detection",
+  "version": "0.1.0",
+  "private": true,
+  "description": "IP/trademark visual detection MVP — Hono API + Python worker + Postgres/pgvector",
+  "workspaces": [
+    "apps/api",
+    "packages/contracts"
+  ],
+  "scripts": {
+    "dev": "bun run --cwd apps/api dev",
+    "build": "bun run --cwd apps/api build",
+    "migrate:up": "bun run scripts/migrate.ts up",
+    "migrate:status": "bun run scripts/migrate.ts status",
+    "migrate:create": "bun run scripts/migrate.ts create",
+    "seed": "bun run scripts/seed.ts",
+    "benchmark": "bun run benchmarks/run.ts",
+    "compose:up": "docker compose -f infra/docker-compose.yml up --build",
+    "compose:down": "docker compose -f infra/docker-compose.yml down -v"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.10",
+    "@types/node": "^20.14.0",
+    "@types/pg": "^8.20.0",
+    "pg": "^8.20.0",
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,0 +1,20 @@
+[project]
+name = "ipd-worker"
+version = "0.1.0"
+description = "IP Detection ML worker — pulls jobs from the API and runs SigLIP2 / Grounding DINO."
+requires-python = ">=3.10"
+dependencies = [
+  "httpx>=0.27.0",
+  "pillow>=10.4.0",
+  "numpy>=1.26.0",
+]
+
+[project.optional-dependencies]
+# Heavy ML stack; only installed when EMBEDDING_MODEL=siglip2.
+ml = [
+  "torch>=2.3.0",
+  "transformers>=4.44.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
