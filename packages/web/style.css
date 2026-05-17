@@ -203,11 +203,33 @@ body {
   font-size: 13px;
   color: var(--accent-blue);
 }
+.landing-hero-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
 .landing-cta {
   width: auto;
   padding: 14px 40px;
   font-size: 16px;
   display: inline-block;
+}
+.btn-secondary {
+  padding: 13px 40px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-secondary:hover {
+  border-color: var(--accent-blue);
+  background: var(--bg-card);
 }
 
 .landing-section {
@@ -371,6 +393,57 @@ body {
   color: var(--accent-blue);
 }
 
+.landing-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.landing-stat {
+  text-align: center;
+  padding: 28px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+}
+.landing-stat-number {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--accent-red);
+  margin-bottom: 8px;
+  letter-spacing: -1px;
+}
+.landing-stat-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.landing-platforms {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+}
+.landing-platform {
+  text-align: center;
+  padding: 24px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  transition: border-color 0.2s;
+}
+.landing-platform:hover {
+  border-color: var(--border-accent);
+}
+.landing-platform-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.landing-platform-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 .landing-bottom-cta {
   text-align: center;
   padding: 32px 0;
@@ -385,6 +458,8 @@ body {
   .landing-cards { grid-template-columns: 1fr; }
   .landing-examples { grid-template-columns: 1fr; }
   .landing-features { grid-template-columns: 1fr; }
+  .landing-stats { grid-template-columns: repeat(2, 1fr); }
+  .landing-platforms { grid-template-columns: repeat(3, 1fr); }
   .landing-hero { padding: 48px 24px 40px; }
   .landing-section { padding: 48px 24px; }
 }
