@@ -923,6 +923,43 @@ body {
   color: var(--accent-green);
 }
 .monitor-btn-approved:hover { background: var(--accent-green-bg-soft); opacity: 0.9; }
+.monitor-card { position: relative; }
+.monitor-card-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  gap: 8px;
+  border-radius: var(--radius-md);
+  opacity: 0;
+  animation: overlay-in 0.3s ease forwards;
+  z-index: 2;
+}
+@keyframes overlay-in { to { opacity: 1; } }
+.monitor-card-overlay.overlay-takedown {
+  background: rgba(255, 23, 68, 0.92);
+}
+.monitor-card-overlay.overlay-cnd {
+  background: rgba(255, 188, 46, 0.92);
+}
+.monitor-card-overlay-icon { font-size: 28px; }
+.monitor-card-overlay-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+.monitor-card-overlay.overlay-cnd .monitor-card-overlay-title { color: #1a1a2e; }
+.monitor-card-overlay-msg {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.9);
+  max-width: 240px;
+}
+.monitor-card-overlay.overlay-cnd .monitor-card-overlay-msg { color: rgba(0,0,0,0.7); }
 .monitor-card.removing {
   opacity: 0;
   transform: scale(0.95);

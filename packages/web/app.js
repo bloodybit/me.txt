@@ -970,6 +970,27 @@
           '<button class="monitor-btn-cnd" title="Send a Cease &amp; Desist letter">Cease &amp; Desist</button>' +
           '<button class="monitor-btn-approved" title="Mark as approved (not infringing)">Approved</button>' +
         '</div>';
+      var siteDomain = data.site && data.site.domain ? data.site.domain : 'the site';
+      card.querySelector('.monitor-btn-takedown').addEventListener('click', function () {
+        if (card.querySelector('.monitor-card-overlay')) return;
+        var overlay = document.createElement('div');
+        overlay.className = 'monitor-card-overlay overlay-takedown';
+        overlay.innerHTML =
+          '<div class="monitor-card-overlay-icon">⛔</div>' +
+          '<div class="monitor-card-overlay-title">Take-down in action</div>' +
+          '<div class="monitor-card-overlay-msg">' + esc(siteDomain) + ' will be contacted and the listing taken down.</div>';
+        card.appendChild(overlay);
+      });
+      card.querySelector('.monitor-btn-cnd').addEventListener('click', function () {
+        if (card.querySelector('.monitor-card-overlay')) return;
+        var overlay = document.createElement('div');
+        overlay.className = 'monitor-card-overlay overlay-cnd';
+        overlay.innerHTML =
+          '<div class="monitor-card-overlay-icon">✉️</div>' +
+          '<div class="monitor-card-overlay-title">Cease &amp; Desist sent</div>' +
+          '<div class="monitor-card-overlay-msg">Contacted provider with thehog.ai — seller will be notified.</div>';
+        card.appendChild(overlay);
+      });
       card.querySelector('.monitor-btn-approved').addEventListener('click', function () {
         card.classList.add('removing');
         card.addEventListener('transitionend', function () { card.remove(); });
