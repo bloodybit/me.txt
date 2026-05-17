@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>me.txt — Likeness Consent Registry</title>
+  <title>me.txt — Copyright Infringement Detection</title>
   <script>
     (function () {
       try {
@@ -39,30 +39,34 @@
   <div class="landing-hero">
     <div class="landing-hero-inner">
       <h1 class="landing-title">me<span>.txt</span></h1>
-      <p class="landing-subtitle">The open standard for human likeness rights</p>
-      <p class="landing-desc">Like <code>robots.txt</code> tells crawlers what they can index, <code>me.txt</code> tells AI systems what they can do with your face. Register once. Enforce everywhere.</p>
-      <button class="btn-primary landing-cta" data-screen-link="register">Register Your Likeness</button>
+      <p class="landing-subtitle">Stop copyright infringement before it costs you</p>
+      <p class="landing-desc">Register your copyrighted characters and trademarks. We scan marketplaces like Etsy for unauthorized use &mdash; then help you file takedowns or send cease &amp; desist letters in one click.</p>
+      <div class="landing-hero-actions">
+        <button class="btn-primary landing-cta" data-screen-link="register">Register Your IP</button>
+        <button class="btn-secondary landing-cta" data-screen-link="monitor">See It In Action</button>
+      </div>
     </div>
   </div>
 
   <div class="landing-section">
     <div class="landing-section-inner">
-      <h2 class="landing-section-title">Why me.txt?</h2>
-      <div class="landing-cards">
-        <div class="landing-card">
-          <div class="landing-card-icon">&#128566;</div>
-          <h3>Your face is being used</h3>
-          <p>AI models train on billions of images scraped from the web. Deepfakes, synthetic ads, and AI-generated merch use real faces without consent. There is no opt-out mechanism &mdash; until now.</p>
+      <h2 class="landing-section-title">The problem is massive</h2>
+      <div class="landing-stats">
+        <div class="landing-stat">
+          <div class="landing-stat-number">$4.2T</div>
+          <div class="landing-stat-label">Global counterfeit &amp; pirated goods market by 2026</div>
         </div>
-        <div class="landing-card">
-          <div class="landing-card-icon">&#128220;</div>
-          <h3>A machine-readable consent file</h3>
-          <p>me.txt is a plain-text file that declares who you are, what likeness data is registered, and exactly what uses you allow or deny &mdash; readable by any system, enforceable by anyone.</p>
+        <div class="landing-stat">
+          <div class="landing-stat-number">6B+</div>
+          <div class="landing-stat-label">Suspected counterfeit listings removed by Amazon alone in 2023</div>
         </div>
-        <div class="landing-card">
-          <div class="landing-card-icon">&#128737;</div>
-          <h3>Evidence-backed enforcement</h3>
-          <p>When someone uses your likeness without permission, me.txt generates timestamped evidence packets with match confidence, source URLs, and consent status &mdash; ready for takedown requests.</p>
+        <div class="landing-stat">
+          <div class="landing-stat-number">80%</div>
+          <div class="landing-stat-label">Of small IP holders can't afford traditional enforcement</div>
+        </div>
+        <div class="landing-stat">
+          <div class="landing-stat-number">$150K</div>
+          <div class="landing-stat-label">Average statutory damages per willful copyright infringement in the U.S.</div>
         </div>
       </div>
     </div>
@@ -75,22 +79,22 @@
         <div class="landing-step">
           <div class="landing-step-num">1</div>
           <div class="landing-step-body">
-            <h3>Upload your photos</h3>
-            <p>Provide one or more photos of yourself. The system extracts facial embeddings &mdash; mathematical representations of your face &mdash; and stores them securely.</p>
+            <h3>Register your character or trademark</h3>
+            <p>Upload reference images of your copyrighted character or trademarked artwork. We extract visual fingerprints to identify it across marketplaces.</p>
           </div>
         </div>
         <div class="landing-step">
           <div class="landing-step-num">2</div>
           <div class="landing-step-body">
-            <h3>Set your consent rules</h3>
-            <p>Choose exactly what uses you allow: editorial, commercial, AI training, satire. Deny everything by default, then allow only what you approve.</p>
+            <h3>We scan marketplaces for you</h3>
+            <p>Our engine crawls platforms like Etsy, Amazon, and Redbubble &mdash; looking for products that use your IP without permission. You get results with match confidence and direct links.</p>
           </div>
         </div>
         <div class="landing-step">
           <div class="landing-step-num">3</div>
           <div class="landing-step-body">
-            <h3>Get your me.txt</h3>
-            <p>A permanent, public endpoint serves your consent file. Any AI system, platform, or rights-management tool can query it to check your permissions before using your likeness.</p>
+            <h3>Take action in one click</h3>
+            <p>Found an infringement? File a DMCA takedown request directly to the platform, or generate a cease &amp; desist letter &mdash; complete with evidence, timestamps, and match data.</p>
           </div>
         </div>
       </div>
@@ -99,74 +103,22 @@
 
   <div class="landing-section">
     <div class="landing-section-inner">
-      <h2 class="landing-section-title">Example me.txt files</h2>
-      <p class="landing-examples-desc">Every person controls their own rules. Here are three examples showing different consent configurations:</p>
-      <div class="landing-examples">
-        <div class="landing-example">
-          <div class="landing-example-label">Journalist &mdash; allows editorial only</div>
-          <pre class="landing-example-code"><span class="comment"># me.txt v0.1</span>
-<span class="comment"># Human Likeness Consent Registry</span>
-
-<span class="key">Identity:</span> Sarah Chen
-<span class="key">ID:</span> me_a7c3f12
-
-<span class="key">Likeness-Face:</span> registered
-<span class="key">Likeness-Voice:</span> not-registered
-
-<span class="key">Default-Permission:</span> deny
-
-<span class="allow">Allow: editorial</span>
-<span class="deny">Deny: commercial</span>
-<span class="deny">Deny: ai-training</span>
-<span class="deny">Deny: satire</span>
-
-<span class="key">Match-Endpoint:</span> /api/match
-<span class="key">Profile:</span> /api/profile/me_a7c3f12
-<span class="key">Self:</span> /sarah-chen/me.txt</pre>
+      <h2 class="landing-section-title">Why creators choose me.txt</h2>
+      <div class="landing-cards">
+        <div class="landing-card">
+          <div class="landing-card-icon">&#128269;</div>
+          <h3>Visual AI matching</h3>
+          <p>Our image recognition doesn&rsquo;t just look for exact copies. It detects derivative works, color variations, and partial uses of your character across product listings.</p>
         </div>
-        <div class="landing-example">
-          <div class="landing-example-label">Actor &mdash; allows editorial + satire</div>
-          <pre class="landing-example-code"><span class="comment"># me.txt v0.1</span>
-<span class="comment"># Human Likeness Consent Registry</span>
-
-<span class="key">Identity:</span> Marcus Rivera
-<span class="key">ID:</span> me_d4e8b09
-
-<span class="key">Likeness-Face:</span> registered
-<span class="key">Likeness-Voice:</span> not-registered
-
-<span class="key">Default-Permission:</span> deny
-
-<span class="allow">Allow: editorial</span>
-<span class="deny">Deny: commercial</span>
-<span class="deny">Deny: ai-training</span>
-<span class="allow">Allow: satire</span>
-
-<span class="key">Match-Endpoint:</span> /api/match
-<span class="key">Profile:</span> /api/profile/me_d4e8b09
-<span class="key">Self:</span> /marcus-rivera/me.txt</pre>
+        <div class="landing-card">
+          <div class="landing-card-icon">&#9888;&#65039;</div>
+          <h3>Instant enforcement</h3>
+          <p>Generate platform-specific takedown requests and legally-sound cease &amp; desist letters with one click. Evidence packets include screenshots, timestamps, and match confidence.</p>
         </div>
-        <div class="landing-example">
-          <div class="landing-example-label">Influencer &mdash; denies everything</div>
-          <pre class="landing-example-code"><span class="comment"># me.txt v0.1</span>
-<span class="comment"># Human Likeness Consent Registry</span>
-
-<span class="key">Identity:</span> Aiko Tanaka
-<span class="key">ID:</span> me_f1b2c56
-
-<span class="key">Likeness-Face:</span> registered
-<span class="key">Likeness-Voice:</span> not-registered
-
-<span class="key">Default-Permission:</span> deny
-
-<span class="deny">Deny: editorial</span>
-<span class="deny">Deny: commercial</span>
-<span class="deny">Deny: ai-training</span>
-<span class="deny">Deny: satire</span>
-
-<span class="key">Match-Endpoint:</span> /api/match
-<span class="key">Profile:</span> /api/profile/me_f1b2c56
-<span class="key">Self:</span> /aiko-tanaka/me.txt</pre>
+        <div class="landing-card">
+          <div class="landing-card-icon">&#128200;</div>
+          <h3>Continuous monitoring</h3>
+          <p>Set up watchlists for your characters. We scan on demand across multiple marketplaces and alert you when new potential infringements appear.</p>
         </div>
       </div>
     </div>
@@ -174,33 +126,65 @@
 
   <div class="landing-section landing-section-alt">
     <div class="landing-section-inner">
-      <h2 class="landing-section-title">What you get</h2>
-      <div class="landing-features">
-        <div class="landing-feature">
-          <span class="landing-feature-tag allow-tag">Scan</span>
-          <p>Test any webpage against the registry. If a face matches a registered profile, the system flags consent violations in real time.</p>
+      <h2 class="landing-section-title">Built for the platforms that matter</h2>
+      <div class="landing-platforms">
+        <div class="landing-platform">
+          <div class="landing-platform-name">Etsy</div>
+          <div class="landing-platform-desc">Handmade &amp; print-on-demand</div>
         </div>
-        <div class="landing-feature">
-          <span class="landing-feature-tag deny-tag">Monitor</span>
-          <p>Watch marketplaces like Etsy, Amazon, and Redbubble for unauthorized merch that uses your likeness. Get alerts and evidence.</p>
+        <div class="landing-platform">
+          <div class="landing-platform-name">Amazon</div>
+          <div class="landing-platform-desc">Global marketplace</div>
         </div>
-        <div class="landing-feature">
-          <span class="landing-feature-tag key-tag">Dashboard</span>
-          <p>Update consent rules anytime. View your audit log, inspect source intelligence, and download evidence packets for enforcement.</p>
+        <div class="landing-platform">
+          <div class="landing-platform-name">Redbubble</div>
+          <div class="landing-platform-desc">Print-on-demand merch</div>
         </div>
-        <div class="landing-feature">
-          <span class="landing-feature-tag key-tag">Browse</span>
-          <p>Explore the public registry. See who has registered and what consent rules they&rsquo;ve set &mdash; full transparency for everyone.</p>
+        <div class="landing-platform">
+          <div class="landing-platform-name">eBay</div>
+          <div class="landing-platform-desc">Auctions &amp; resale</div>
+        </div>
+        <div class="landing-platform">
+          <div class="landing-platform-name">TeePublic</div>
+          <div class="landing-platform-desc">T-shirts &amp; apparel</div>
+        </div>
+        <div class="landing-platform">
+          <div class="landing-platform-name">More</div>
+          <div class="landing-platform-desc">Custom domains</div>
         </div>
       </div>
     </div>
   </div>
 
   <div class="landing-section">
+    <div class="landing-section-inner">
+      <h2 class="landing-section-title">What you get</h2>
+      <div class="landing-features">
+        <div class="landing-feature">
+          <span class="landing-feature-tag deny-tag">Takedown</span>
+          <p>One-click DMCA takedown requests sent directly to the marketplace. Pre-filled with your registration data, evidence, and legal references.</p>
+        </div>
+        <div class="landing-feature">
+          <span class="landing-feature-tag deny-tag">Cease &amp; Desist</span>
+          <p>Generate professional cease &amp; desist letters backed by evidence packets. Includes match screenshots, confidence scores, and your registration proof.</p>
+        </div>
+        <div class="landing-feature">
+          <span class="landing-feature-tag allow-tag">Monitor</span>
+          <p>Watchlist-based marketplace scanning. Pick your characters, pick the platforms, and get results with match confidence and direct product links.</p>
+        </div>
+        <div class="landing-feature">
+          <span class="landing-feature-tag key-tag">Evidence</span>
+          <p>Every detection generates a timestamped evidence packet &mdash; screenshots, source URLs, match data, and consent status. Court-ready if you need it.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="landing-section landing-section-alt">
     <div class="landing-section-inner landing-bottom-cta">
-      <h2 class="landing-section-title">Claim your likeness</h2>
-      <p class="landing-desc">It takes 30 seconds to register. Your face, your rules.</p>
-      <button class="btn-primary landing-cta" data-screen-link="register">Get Started</button>
+      <h2 class="landing-section-title">Protect your creative work</h2>
+      <p class="landing-desc">Register your characters in 30 seconds. Start scanning marketplaces immediately. No legal team required.</p>
+      <button class="btn-primary landing-cta" data-screen-link="register">Get Started Free</button>
     </div>
   </div>
 </div>
