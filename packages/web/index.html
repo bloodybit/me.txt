@@ -23,6 +23,7 @@
   <div class="nav-links">
     <button class="nav-link nav-primary active" data-screen-link="register">Register</button>
     <button class="nav-link nav-primary" data-screen-link="monitor">Monitor</button>
+    <button class="nav-link nav-primary" data-screen-link="browse">Browse</button>
     <button class="nav-link" data-screen-link="scan">Scan</button>
     <button class="nav-link" data-screen-link="image-search">Image Search</button>
     <button class="nav-link" data-screen-link="dashboard">Dashboard</button>
@@ -219,6 +220,25 @@
 
     <div class="image-search-status" id="image-search-status">Ready to search.</div>
     <div class="image-search-results" id="image-search-results"></div>
+  </div>
+</div>
+
+<!-- BROWSE -->
+<div id="screen-browse" class="screen">
+  <div class="browse-container">
+    <div class="browse-header">
+      <h2>Browse Characters</h2>
+      <p>Search and explore all registered characters and their me.txt consent profiles</p>
+    </div>
+
+    <div class="browse-search">
+      <input class="form-input browse-search-input" id="browse-search" type="text" placeholder="Search by name or handle..." />
+    </div>
+
+    <div class="browse-count" id="browse-count"></div>
+    <div class="browse-grid" id="browse-grid">
+      <div class="audit-empty">Loading characters...</div>
+    </div>
   </div>
 </div>
 
