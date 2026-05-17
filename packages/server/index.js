@@ -471,12 +471,13 @@ app.post('/api/monitor/scan', async (req, res) => {
 
   if (directHandler) {
     try {
-      candidates = await directHandler({ keyword: monitor.keyword, limit });
-      method = `puppeteer:${monitor.domain.replace(/^www\./, '')}`;
+      const handlerResult = await directHandler({ keyword: monitor.keyword, limit });
+      candidates = handlerResult.results;
+      method = handlerResult.method;
       query = monitor.keyword;
     } catch (err) {
-      fallbackReason = err.message || 'direct marketplace scrape failed';
-      console.warn(`[monitor-scan] ${monitor.domain} direct scrape failed, falling back to ${provider}:`, fallbackReason);
+      fallbackReason = err.message || 'direct marketplace lookup failed';
+      console.warn(`[monitor-scan] ${monitor.domain} direct lookup failed, falling back to ${provider}:`, fallbackReason);
     }
   }
 

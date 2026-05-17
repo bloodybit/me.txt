@@ -971,13 +971,16 @@
 
   function describeScanMethod(method, fallbackReason) {
     if (!method) return '';
+    if (method === 'etsy-api') {
+      return 'Live results via Etsy Open API.';
+    }
     if (method.startsWith('puppeteer:')) {
       return 'Live scrape via headless Chrome (' + method.slice('puppeteer:'.length) + ').';
     }
     if (method.endsWith('-fallback')) {
       const base = method.replace('-fallback', '');
       const reason = fallbackReason ? ' Reason: ' + fallbackReason : '';
-      return 'Marketplace scrape blocked; fell back to ' + base.toUpperCase() + ' index search.' + reason;
+      return 'Direct marketplace lookup unavailable; fell back to ' + base.toUpperCase() + ' index search.' + reason;
     }
     return 'Source: ' + method.toUpperCase() + ' index search.';
   }

@@ -8,6 +8,7 @@ if (!process.env.PUPPETEER_CACHE_DIR) {
 
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const etsyApi = require('./etsy-api');
 
 puppeteer.use(StealthPlugin());
 
@@ -205,11 +206,40 @@ async function scrapeEbay({ keyword, limit }) {
   });
 }
 
+async function findEtsy({ keyword, limit }) {
+  const attempts = [];
+  if (process.env.ETSY_API_KEY) {
+    try {
+      const apiResults = await etsyApi.searchListings({ keywords: keyword, limit });
+      if (apiResults.length) {
+        return { results: apiResults, method: 'etsy-api' };
+      }
+      attempts.push('etsy-api returned 0 results');
+    } catch (err) {
+      attempts.push(`etsy-api: ${err.message}`);
+    }
+  }
+  try {
+    const scraped = await scrapeEtsy({ keyword, limit });
+    return { results: scraped, method: 'puppeteer:etsy.com' };
+  } catch (err) {
+    attempts.push(`puppeteer: ${err.message}`);
+    const aggregated = new BlockedError(attempts.join(' | '));
+    aggregated.attempts = attempts;
+    throw aggregated;
+  }
+}
+
+async function findEbay({ keyword, limit }) {
+  const scraped = await scrapeEbay({ keyword, limit });
+  return { results: scraped, method: 'puppeteer:ebay.com' };
+}
+
 const HANDLERS = {
-  'etsy.com': scrapeEtsy,
-  'www.etsy.com': scrapeEtsy,
-  'ebay.com': scrapeEbay,
-  'www.ebay.com': scrapeEbay,
+  'etsy.com': findEtsy,
+  'www.etsy.com': findEtsy,
+  'ebay.com': findEbay,
+  'www.ebay.com': findEbay,
 };
 
 function handlerFor(domain) {
